@@ -414,45 +414,60 @@ Per violatori che operano in UE:
       - Avviso pubblico di non-conformità
       - Implementazione congelamento beni secondo normative UE
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-ARTICOLO 8 — REGISTRO PUBBLICO DI VIOLAZIONI
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ARTICOLO 8 — REGISTRO PUBBLICO DELLE VIOLAZIONI
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-8.1 — PUBBLICAZIONE REGISTRO VIOLAZIONI
-Il titolare si riserva il diritto di pubblicare violazioni verificate su un
-registro pubblico presso https://registrodelleopposizioni.it/ o piattaforma equivalente, incluso:
-  (a) Nome entità o persona violatrice
-  (b) Data scoperta violazione e notifica emessa (Art. 7.2)
-  (c) Natura della violazione (mancato pagamento, addestramento non autorizzato,
-      dichiarazione falsa)
-  (d) Importi dovuti (se violazione finanziaria)
-  (e) Status corrente (contestato, regolato, risolto, in contenzioso, non-conforme)
+8.1 — Istituzione del Registro
+Il Licenziante può istituire e mantenere un registro pubblico delle violazioni della licenza (“Registro delle Violazioni”), accessibile tramite il sito ufficiale del Licenziante o una piattaforma equivalente di trasparenza e sicurezza.
 
-8.2 — CONDIZIONI DI RIMOZIONE
-Un record di violazione è rimosso dal registro al verificarsi di:
-  (a) Pagamento integrale di tutti gli importi dovuti (principale + penali)
-  (b) Cessazione della violazione + prova scritta di conformità
-  (c) Accordo transattivo scritto reciproco
-  (d) Sentenza giudiziale o lodo arbitrale a favore del licenziatario
-  (e) Scadenza termini di prescrizione (24 mesi dalla scoperta per Art. 7.2)
+Il Registro può includere, a titolo esemplificativo:
 
-8.3 — EFFETTO DEL REGISTRO
-Pubblicazione di una violazione:
-  (a) Serve come notifica costruttiva ad altri titolari
-  (b) Può essere considerato da autorità enforcement (DMA, AI Act) in indagini
-  (c) Può influire su reputazione aziendale, standing credito e relazioni terze parti
-  (d) Non costituisce diffamazione se pubblicato in buona fede con accuratezza
-      fattuale e dovuto processo per Art. 7.2
+(a) nome dell’entità o della persona responsabile della violazione;
+(b) data di individuazione della violazione e data della notifica formale ai sensi dell’Articolo 7.2;
+(c) natura della violazione (ad esempio: mancato pagamento, utilizzo non autorizzato, dichiarazione falsa o ingannevole);
+(d) importi dovuti o obbligazioni finanziarie pendenti, se applicabili;
+(e) stato corrente della violazione (segnalata, in revisione, contestata, non risolta, sanata, transatta o risolta).
 
-8.4 — PROTEZIONE EDITORE
-Il titolare NON è responsabile per danni derivanti da pubblicazione accurata,
-in buona fede, di violazioni verificate, a condizione che:
-  (a) Violazione sia stata accertata per processo Art. 7.1-7.3
-  (b) Informazione pubblicata sia fattualmente accurata
-  (c) Licenziatario sia stato notificato per Art. 7.2 (periodo cura 15 giorni)
-  (d) Violazione rimane irrisolta dopo periodo cura
-  (e) Record sia rimosso al soddisfare condizioni Art. 8.2
+8.2 — Procedura e diritto di replica
+Prima della pubblicazione nel Registro:
 
+(a) il presunto violatore deve ricevere notifica formale scritta ai sensi dell’Articolo 7.2;
+(b) deve essere concesso un periodo minimo di quindici (15) giorni per sanare la violazione o presentare osservazioni;
+(c) il soggetto interessato può fornire documentazione o prove a propria difesa;
+(d) il Licenziante si impegna a valutare ragionevolmente le prove presentate prima della pubblicazione.
+
+Se la controversia rimane irrisolta allo scadere del periodo di sanatoria, la violazione potrà essere pubblicata con stato “non risolta” o “contestata”.
+
+8.3 — Aggiornamento o rimozione delle registrazioni
+Le registrazioni nel Registro delle Violazioni saranno aggiornate o rimosse in presenza di uno dei seguenti eventi:
+
+(a) pagamento integrale di tutti gli importi dovuti (capitale e penali);
+(b) cessazione verificata della violazione e presentazione di prova scritta di conformità;
+(c) accordo transattivo scritto tra le parti;
+(d) sentenza definitiva o lodo arbitrale favorevole al Licenziatario;
+(e) decorso dei termini di prescrizione applicabili (24 mesi dalla scoperta della violazione, salvo sospensioni dovute a contenzioso).
+
+Il Licenziante aggiornerà lo stato della registrazione entro un periodo ragionevole successivo alla verifica delle informazioni.
+
+8.4 — Finalità del Registro
+Il Registro delle Violazioni ha finalità di trasparenza, conformità e responsabilità, tra cui:
+
+(a) informare altri titolari di diritti o amministratori di licenze;
+(b) favorire il monitoraggio della conformità contrattuale;
+(c) fornire informazioni fattuali su controversie di licenza non risolte.
+
+La pubblicazione nel Registro non costituisce determinazione definitiva di responsabilità legale, salvo decisione confermata da autorità giudiziaria o arbitrale competente.
+
+8.5 — Pubblicazione in buona fede e limitazione di responsabilità
+Il Licenziante non sarà responsabile per danni derivanti dalla pubblicazione nel Registro, a condizione che:
+
+(a) siano seguite procedure ragionevoli di verifica dei fatti;
+(b) sia stata fornita notifica e possibilità di replica ai sensi dell’Articolo 8.2;
+(c) le informazioni pubblicate siano accurate secondo le conoscenze disponibili;
+(d) eventuali errori o nuove informazioni verificate siano corretti o aggiornati tempestivamente.
+
+Il presente articolo non limita il diritto di qualsiasi parte di ricorrere a tribunali o arbitrato per la risoluzione delle controversie.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ARTICOLO 9 — ESCLUSIONE DI GARANZIE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
