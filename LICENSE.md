@@ -423,51 +423,52 @@ Il Licenziante può istituire e mantenere un registro pubblico delle violazioni 
 
 Il Registro può includere, a titolo esemplificativo:
 
-(a) nome dell’entità o della persona responsabile della violazione;
-(b) data di individuazione della violazione e data della notifica formale ai sensi dell’Articolo 7.2;
-(c) natura della violazione (ad esempio: mancato pagamento, utilizzo non autorizzato, dichiarazione falsa o ingannevole);
-(d) importi dovuti o obbligazioni finanziarie pendenti, se applicabili;
-(e) stato corrente della violazione (segnalata, in revisione, contestata, non risolta, sanata, transatta o risolta).
+  (a) nome dell’entità o della persona responsabile della violazione;
+  (b) data di individuazione della violazione e data della notifica formale ai sensi dell’Articolo 7.2;
+  (c) natura della violazione (ad esempio: mancato pagamento, utilizzo non autorizzato, dichiarazione falsa o ingannevole);
+  (d) importi dovuti o obbligazioni finanziarie pendenti, se applicabili;
+  (e) stato corrente della violazione (segnalata, in revisione, contestata, non risolta, sanata, transatta o risolta).
 
 8.2 — Procedura e diritto di replica
 Prima della pubblicazione nel Registro:
 
-(a) il presunto violatore deve ricevere notifica formale scritta ai sensi dell’Articolo 7.2;
-(b) deve essere concesso un periodo minimo di quindici (15) giorni per sanare la violazione o presentare osservazioni;
-(c) il soggetto interessato può fornire documentazione o prove a propria difesa;
-(d) il Licenziante si impegna a valutare ragionevolmente le prove presentate prima della pubblicazione.
+  (a) il presunto violatore deve ricevere notifica formale scritta ai sensi dell’Articolo 7.2;
+  (b) deve essere concesso un periodo minimo di quindici (15) giorni per sanare la violazione o presentare osservazioni;
+  (c) il soggetto interessato può fornire documentazione o prove a propria difesa;
+  (d) il Licenziante si impegna a valutare ragionevolmente le prove presentate prima della pubblicazione.
 
 Se la controversia rimane irrisolta allo scadere del periodo di sanatoria, la violazione potrà essere pubblicata con stato “non risolta” o “contestata”.
 
 8.3 — Aggiornamento o rimozione delle registrazioni
 Le registrazioni nel Registro delle Violazioni saranno aggiornate o rimosse in presenza di uno dei seguenti eventi:
 
-(a) pagamento integrale di tutti gli importi dovuti (capitale e penali);
-(b) cessazione verificata della violazione e presentazione di prova scritta di conformità;
-(c) accordo transattivo scritto tra le parti;
-(d) sentenza definitiva o lodo arbitrale favorevole al Licenziatario;
-(e) decorso dei termini di prescrizione applicabili (24 mesi dalla scoperta della violazione, salvo sospensioni dovute a contenzioso).
+  (a) pagamento integrale di tutti gli importi dovuti (capitale e penali);
+  (b) cessazione verificata della violazione e presentazione di prova scritta di conformità;
+  (c) accordo transattivo scritto tra le parti;
+  (d) sentenza definitiva o lodo arbitrale favorevole al Licenziatario;
+  (e) decorso dei termini di prescrizione applicabili (24 mesi dalla scoperta della violazione, salvo sospensioni dovute a contenzioso).
 
 Il Licenziante aggiornerà lo stato della registrazione entro un periodo ragionevole successivo alla verifica delle informazioni.
 
 8.4 — Finalità del Registro
 Il Registro delle Violazioni ha finalità di trasparenza, conformità e responsabilità, tra cui:
 
-(a) informare altri titolari di diritti o amministratori di licenze;
-(b) favorire il monitoraggio della conformità contrattuale;
-(c) fornire informazioni fattuali su controversie di licenza non risolte.
+  (a) informare altri titolari di diritti o amministratori di licenze;
+  (b) favorire il monitoraggio della conformità contrattuale;
+  (c) fornire informazioni fattuali su controversie di licenza non risolte.
 
 La pubblicazione nel Registro non costituisce determinazione definitiva di responsabilità legale, salvo decisione confermata da autorità giudiziaria o arbitrale competente.
 
 8.5 — Pubblicazione in buona fede e limitazione di responsabilità
 Il Licenziante non sarà responsabile per danni derivanti dalla pubblicazione nel Registro, a condizione che:
 
-(a) siano seguite procedure ragionevoli di verifica dei fatti;
-(b) sia stata fornita notifica e possibilità di replica ai sensi dell’Articolo 8.2;
-(c) le informazioni pubblicate siano accurate secondo le conoscenze disponibili;
-(d) eventuali errori o nuove informazioni verificate siano corretti o aggiornati tempestivamente.
+  (a) siano seguite procedure ragionevoli di verifica dei fatti;
+  (b) sia stata fornita notifica e possibilità di replica ai sensi dell’Articolo 8.2;
+  (c) le informazioni pubblicate siano accurate secondo le conoscenze disponibili;
+  (d) eventuali errori o nuove informazioni verificate siano corretti o aggiornati tempestivamente.
 
 Il presente articolo non limita il diritto di qualsiasi parte di ricorrere a tribunali o arbitrato per la risoluzione delle controversie.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ARTICOLO 9 — ESCLUSIONE DI GARANZIE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
