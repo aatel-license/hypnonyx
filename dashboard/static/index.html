@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hypnonyx Kanban Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Inter:wght@300;400;700&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <div class="glass-container">
+        <header>
+            <div class="logo">
+                <span class="dot"></span>
+                <h1>Hypnonyx <span>Multi-Agent System</span></h1>
+            </div>
+            <div class="system-status">
+                <div class="notification-center" id="notification-center">
+                    <button id="noti-bell-btn" class="noti-bell-btn" title="Notifiche">
+                        <svg class="bell-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                        </svg>
+                        <span id="noti-badge" class="noti-badge" style="display: none;">0</span>
+                    </button>
+                    <div id="noti-dropdown" class="noti-dropdown" style="display: none;">
+                        <div class="noti-header">
+                            <div class="header-left">
+                                <h3>Notifiche</h3>
+                                <div class="header-actions">
+                                    <button id="test-noti-btn" class="test-btn">Test</button>
+                                    <button id="clear-noti-btn" class="clear-btn">Cancella</button>
+                                </div>
+                            </div>
+                            <div class="noti-controls">
+                                <label class="switch-label">
+                                    <input type="checkbox" id="noti-toggle" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="noti-list" class="noti-list">
+                            <div class="empty-noti">Nessuna nuova notifica</div>
+                        </div>
+                    </div>
+                </div>
+                <div id="connection-status" class="status-badge online">Sistema Online</div>
+                <div id="last-update" class="time-stamp">Ultimo aggiornamento: --:--</div>
+            </div>
+        </header>
+
+        <nav class="dashboard-tabs">
+            <button class="tab-btn active" data-target="kanban-section">
+                <span class="icon">📋</span> Board
+            </button>
+            <button class="tab-btn" data-target="backlog-section">
+                <span class="icon">🗄️</span> Backlog Progetto
+                <span id="backlog-badge" class="releases-badge"
+                    style="display:none; background: linear-gradient(135deg, #10b981, #06b6d4);">0</span>
+            </button>
+            <button class="tab-btn" data-target="retro-section">
+                <span class="icon">🔄</span> Retrospectives
+            </button>
+            <button class="tab-btn" data-target="releases-section">
+                <span class="icon">🚀</span> Releases
+                <span id="releases-badge" class="releases-badge" style="display:none;">0</span>
+            </button>
+            <button class="tab-btn" data-target="refinement-section">
+                <span class="icon">🗂️</span> Backlog Refinement
+            </button>
+            <button class="tab-btn" data-target="agents-section">
+                <span class="icon">🤖</span> Agenti
+            </button>
+        </nav>
+
+        <main>
+            <div class="dashboard-grid">
+                <!-- Kanban Section -->
+                <section class="kanban-section">
+                    <div class="section-header">
+                        <div class="title-with-select">
+                            <h2>Kanban Board</h2>
+                            <select id="project-selector">
+                                <option value="">Tutti i Progetti</option>
+                            </select>
+                            <select id="theme-selector" class="theme-selector" title="Scegli Tema">
+                                <option value="midnight">🪐 Midnight</option>
+                                <option value="cyberpunk">⚡ Cyberpunk</option>
+                                <option value="forest">🌲 Forest</option>
+                                <option value="arctic">❄️ Arctic</option>
+                                <option value="sunset">🌅 Sunset</option>
+                                <option value="oceanic">🌊 Oceanic</option>
+                                <option value="gold">💎 Gold Luxury</option>
+                                <option value="matrix">📟 Matrix</option>
+                                <option value="volcano">🌋 Volcano</option>
+                                <option value="lavender">🌸 Lavender</option>
+                                <option disabled>─── Light Themes ───</option>
+                                <option value="snow">❄️ Snow Cloud</option>
+                                <option value="mint">🌿 Mint Fresh</option>
+                                <option value="rose">🌹 Rose Petal</option>
+                                <option value="solar">☀️ Solar Morning</option>
+                                <option value="paper">📄 Clean Paper</option>
+                                <option disabled>─── Dark & Vivid ───</option>
+                                <option value="space">🌌 Deep Space</option>
+                                <option value="emerald">💚 Emerald Night</option>
+                                <option value="ruby">🩸 Ruby Core</option>
+                                <option value="neon">🌈 Midnight Neon</option>
+                                <option value="velvet">👑 Royal Velvet</option>
+                            </select>
+                        </div>
+                        <div id="project-progress-container" class="project-progress-container" style="display: none;">
+                            <div class="progress-info">
+                                <span class="progress-label">Completamento Progetto</span>
+                                <span id="project-percentage" class="progress-percentage">0%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div id="project-progress-bar" class="progress-bar project-bar"></div>
+                            </div>
+                        </div>
+                        <div id="project-token-summary" class="project-token-summary" style="display: none;">
+                            <span class="token-pill">
+                                <span class="token-pill-label">🔡 Prompt</span>
+                                <span id="proj-prompt-tokens" class="token-pill-value">0</span>
+                            </span>
+                            <span class="token-pill">
+                                <span class="token-pill-label">💬 Completion</span>
+                                <span id="proj-completion-tokens" class="token-pill-value">0</span>
+                            </span>
+                            <span class="token-pill token-pill-total">
+                                <span class="token-pill-label">⚡ Totale Token</span>
+                                <span id="proj-total-tokens" class="token-pill-value">0</span>
+                            </span>
+                            <span class="token-pill token-pill-cost">
+                                <span class="token-pill-label">💰 Costo</span>
+                                <span id="proj-total-cost" class="token-pill-value">$0.0000</span>
+                            </span>
+                            <span id="toon-savings-pill" class="token-pill token-pill-savings" style="display: none;">
+                                <span class="token-pill-label">💎 Risparmio TOON</span>
+                                <span id="proj-savings-value" class="token-pill-value">0%</span>
+                                <span id="proj-standard-total" class="token-pill-subvalue"></span>
+                            </span>
+
+                        </div>
+                        <div class="controls-row">
+                            <input type="text" id="task-search" placeholder="🔍 Cerca task..." />
+                            <button id="expand-all-btn" class="control-btn">Espandi Tutto</button>
+                            <button id="collapse-all-btn" class="control-btn">Comprimi Tutto</button>
+                        </div>
+                    </div>
+                    <div class="kanban-board">
+                        <div class="kanban-column" id="pending">
+                            <h3><span class="icon">📋</span> TO DO</h3>
+                            <div class="task-list"></div>
+                        </div>
+                        <div class="kanban-column" id="in_progress">
+                            <h3><span class="icon">⚙️</span> IN PROGRESS</h3>
+                            <div class="task-list"></div>
+                        </div>
+                        <div class="kanban-column" id="under_review">
+                            <h3><span class="icon">🕵️</span> UNDER REVIEW</h3>
+                            <div class="task-list"></div>
+                        </div>
+                        <div class="kanban-column" id="completed">
+                            <h3><span class="icon">✅</span> COMPLETED</h3>
+                            <div class="task-list"></div>
+                        </div>
+                        <div class="kanban-column" id="failed">
+                            <h3><span class="icon">❌</span> FAILED</h3>
+                            <div class="task-list"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Backlog Section (Hidden by default) -->
+                <section class="backlog-section hidden">
+                    <div class="section-header">
+                        <h2>Product Backlog</h2>
+                        <div class="controls-row">
+                            <input type="text" id="backlog-search" placeholder="🔍 Filtra backlog..." />
+                        </div>
+                    </div>
+                    <div class="backlog-list" id="backlog-list">
+                        <!-- Popolato via JS -->
+                    </div>
+                </section>
+
+                <!-- Retrospective Section (Hidden by default) -->
+                <section class="retro-section hidden">
+                    <div class="section-header">
+                        <h2>Sprint Retrospectives</h2>
+                        <div class="controls-row">
+                            <button id="refresh-retro-btn" class="control-btn">Aggiorna Cronologia</button>
+                        </div>
+                    </div>
+                    <div class="retro-timeline" id="retro-timeline">
+                        <!-- Popolato via JS -->
+                    </div>
+                </section>
+
+                <!-- Releases Section (Hidden by default) -->
+                <section class="releases-section hidden">
+                    <div class="section-header">
+                        <h2>🚀 Release Roadmap</h2>
+                        <div class="release-cycle-container" id="release-cycle-container">
+                            <div class="release-cycle-info">
+                                <span class="cycle-label">Ciclo Release Corrente</span>
+                                <span id="release-cycle-pct" class="cycle-pct">0%</span>
+                            </div>
+                            <div class="cycle-track">
+                                <div id="release-cycle-bar" class="cycle-bar"></div>
+                            </div>
+                            <span id="release-cycle-sprints" class="cycle-sprints"></span>
+                        </div>
+                    </div>
+                    <div class="releases-list" id="releases-list">
+                        <!-- Popolato via JS -->
+                    </div>
+                </section>
+
+                <!-- Backlog Refinement Section (Hidden by default) -->
+                <section class="refinement-section hidden">
+                    <div class="section-header">
+                        <h2>🗂️ Backlog Refinement</h2>
+                        <p class="section-desc">Proposte collaborative degli agenti per il prossimo sprint</p>
+                    </div>
+                    <div class="refinement-list" id="refinement-list">
+                        <!-- Popolato via JS -->
+                    </div>
+                </section>
+
+                <!-- Agents Section (Hidden by default) -->
+                <section class="agents-section hidden">
+                    <div class="section-header">
+                        <h2>🤖 Gestione Agenti & System Prompts</h2>
+                        <p class="section-desc">Monitora l'utilizzo dei token e modifica i prompt di sistema</p>
+                    </div>
+                    <div class="agents-grid" id="agents-grid">
+                        <!-- Popolato via JS -->
+                    </div>
+                </section>
+
+                <!-- Sidebar Section -->
+                <aside class="sidebar">
+                    <section class="agents-status">
+                        <h3>Agenti Attivi</h3>
+                        <div id="agents-list" class="agents-list">
+                            <!-- Agenti popolati via JS -->
+                        </div>
+                    </section>
+
+                    <section class="activity-log">
+                        <h3>Attività Recente</h3>
+                        <div id="log-list" class="log-list">
+                            <!-- Log popolati via JS -->
+                        </div>
+                    </section>
+                </aside>
+            </div>
+        </main>
+    </div>
+
+    <template id="task-card-template">
+        <div class="task-card">
+            <div class="card-header">
+                <span class="agent-tag"></span>
+                <span class="task-id"></span>
+            </div>
+            <div class="task-progress-container">
+                <div class="task-progress-bar"></div>
+            </div>
+            <p class="task-desc"></p>
+            <div class="card-footer">
+                <span class="priority"></span>
+                <span class="time"></span>
+            </div>
+        </div>
+    </template>
+    <!-- Task Modal -->
+    <div id="task-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2 id="task-modal-title">Task Detail</h2>
+                <div id="task-modal-tags" class="task-tags"></div>
+            </div>
+            <div id="task-modal-rejection" class="modal-rejection" style="display:none;"></div>
+            <div id="task-modal-desc" class="modal-body"></div>
+            <div id="task-modal-meta" class="modal-meta"></div>
+            <div id="task-modal-deps" class="modal-deps"></div>
+        </div>
+    </div>
+
+    <!-- Release Detail Modal -->
+    <div id="release-detail-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2 id="release-detail-title" style="color: #fbbf24">Release Detail</h2>
+                <div id="release-detail-meta" class="modal-meta"></div>
+            </div>
+            <div id="release-detail-body" class="modal-body" style="white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <!-- Retrospective Modal -->
+    <div id="retro-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2 id="retro-modal-title" style="color: var(--accent-primary)">Retro Sprint Detail</h2>
+                <div id="retro-modal-meta" class="modal-meta"></div>
+            </div>
+            <div id="retro-modal-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Agent Docs Modal -->
+    <div id="docs-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2>📄 Documenti Agente: <span id="docs-modal-agent" style="color: var(--accent-primary);"></span></h2>
+                <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 5px;">Aggiungi documentazione (PDF,
+                    web URLs o DB schemas) per istruire permanentemente l'agente via RAG Injection.</p>
+            </div>
+
+            <div style="margin: 20px 0; padding: 15px; background: var(--bg-hover); border-radius: 8px;">
+                <h3 style="margin-top:0; margin-bottom: 10px; font-size: 1rem;">Aggiungi Nuovo Documento</h3>
+                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                    <select id="doc-type-select"
+                        style="padding: 8px; border-radius: 6px; background: var(--bg-secondary); color: var(--text-main); border: 1px solid var(--border-color);"
+                        onchange="toggleDocInput()">
+                        <option value="url">Link / Riferimento Web</option>
+                        <option value="text">Testo / DB Schema</option>
+                        <option value="pdf">File PDF / DOCX</option>
+                    </select>
+                </div>
+
+                <div id="doc-input-url" style="display: block; margin-bottom: 10px;">
+                    <input type="text" id="doc-url-val" placeholder="Es. https://docs.spring.io/..."
+                        style="width: 100%; padding: 8px; border-radius: 6px; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color);">
+                </div>
+
+                <div id="doc-input-text" style="display: none; margin-bottom: 10px;">
+                    <input type="text" id="doc-title-val" placeholder="Breve titolo/descrizione..."
+                        style="width: 100%; padding: 8px; border-radius: 6px; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color); margin-bottom: 5px;">
+                    <textarea id="doc-text-val" placeholder="Incolla testo, snippet code o schemi database..."
+                        style="width: 100%; height: 100px; padding: 8px; border-radius: 6px; background: var(--bg-main); color: var(--text-main); border: 1px solid var(--border-color);"></textarea>
+                </div>
+
+                <div id="doc-input-pdf" style="display: none; margin-bottom: 10px;">
+                    <input type="file" id="doc-pdf-file" accept=".pdf,.docx,.txt" style="color: var(--text-main);">
+                </div>
+
+                <button onclick="submitNewDoc()" class="save-prompt-btn" style="background: var(--completed);">Carica
+                    Documento</button>
+            </div>
+
+            <div id="docs-list-container">
+                <h3 style="margin-top:0; margin-bottom: 10px; font-size: 1rem;">Documenti Attivi</h3>
+                <div id="docs-list">
+                    <!-- Popolato da JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log Modal -->
+    <div id="log-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div class="modal-header">
+                <h2 id="modal-title">Dettagli Attività</h2>
+                <div id="modal-meta" class="modal-meta"></div>
+            </div>
+            <div id="modal-body" class="modal-body"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

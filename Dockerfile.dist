@@ -1,0 +1,42 @@
+# Dockerfile per distribuzione protetta (POC)
+# Stage 1: Builder
+FROM python:3.12-slim AS builder
+
+# Installa dipendenze di build
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Installa Nuitka e dipendenze progetto
+RUN pip install --no-cache-dir nuitka
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia il codice
+COPY . .
+
+# Compilazione con Nuitka
+# --standalone: crea un pacchetto autonomo
+# --onefile: crea un singolo eseguibile (opzionale, ma utile per distribuzione)
+# --remove-output: pulisce i file temporanei di build
+RUN python -m Nuitka --standalone --remove-output --output-dir=dist main.py
+
+# Stage 2: Runtime
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# Copia solo il binario compilato dallo stage precedente
+COPY --from=builder /app/dist/main.dist /app/main_dist
+
+# Copia solo le risorse non-codice necessarie
+COPY --from=builder /app/memory /app/memory
+COPY --from=builder /app/docs /app/docs
+COPY --from=builder /app/config.py /app/config.py 
+# Nota: config.py potrebbe contenere segreti, andrebbe gestito con variabili d'ambiente
+
+# Entrypoint puntato al binario
+ENTRYPOINT ["/app/main_dist/main"]
