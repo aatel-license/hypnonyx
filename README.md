@@ -423,7 +423,7 @@ asyncio.run(main())
 
 ## 📝 License
 
-MIT License
+READ License https://github.com/aatel-license/hypnonyx/blob/main/LICENSE.md
 
 ## 🤝 Contributing
 
