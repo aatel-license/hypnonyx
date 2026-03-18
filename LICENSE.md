@@ -1,5 +1,4 @@
 ANTI-AI TRAINING Ethical License (aatel) — Version 2.1
-Based on the MIT License
 
 Copyright (c) 2026 Mirko Perrone
 
