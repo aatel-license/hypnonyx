@@ -265,7 +265,7 @@ pip install -r requirements.txt
 ```bash
 cd projects/your_project
 git init
-git config user.email "agent@devagent.ai"
+git config user.email "agent@hypnonyx.com"
 git config user.name "Hypnonyx"
 ```
 

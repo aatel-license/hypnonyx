@@ -72,7 +72,7 @@ brew install git           # macOS
 # Inizializza Git nel progetto
 cd projects/your_project
 git init
-git config user.email "agent@devagent.ai"
+git config user.email "agent@hypnonyx.com"
 git config user.name "Hypnonyx"
 ```
 

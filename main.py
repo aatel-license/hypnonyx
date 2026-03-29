@@ -241,7 +241,7 @@ class MultiAgentSystem:
             try:
                 subprocess.run(["git", "init"], cwd=self.project_root, check=True)
                 subprocess.run(
-                    ["git", "config", "user.email", "agent@devagent.ai"],
+                    ["git", "config", "user.email", "agent@hypnonyx.com"],
                     cwd=self.project_root,
                     check=True,
                 )
