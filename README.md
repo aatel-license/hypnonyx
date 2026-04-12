@@ -1,95 +1,94 @@
 # hypnonyx
 ![Alt text](https://github.com/aatel-license/hypnonyx/blob/main/image.png "hypnonyx")
-Hypnonyx is an AI agent designed to operate in Swarm mode, following Agile and Scrum principles. Tireless, it was “born” from the sleepless nights of its developers, optimizing code collaboratively and autonomously. Hypnonyx can coordinate multiple instances of itself to maximize productivity and software quality.
+Hypnonyx is an AI agent designed to operate in Swarm mode, following Agile and Scrum principles. Tireless, it was "born" from the sleepless nights of its developers, optimizing code collaboratively and autonomously. Hypnonyx can coordinate multiple instances of itself to maximize productivity and software quality.
 
 # 🤖 Hypnonyx Multi-Agent System
 
+Autonomous multi-agent system for complete software development, featuring a central orchestrator, communication via message broker, persistent memory, and Git automation.
 
-Sistema multi-agente autonomo per lo sviluppo software completo con orchestratore centrale, comunicazione tramite message broker, memoria persistente e Git automation.
+## 🎯 Features
 
-## 🎯 Caratteristiche
+### **7 Specialized Agents**
 
-### **7 Agenti Specializzati**
+1. **Orchestrator Agent** – Coordinates all agents, assigns tasks, monitors progress
+2. **Backend Developer Agent** – Implements APIs, business logic, authentication
+3. **Frontend Developer Agent** – Creates UI, integrates with backend
+4. **Database Administrator Agent** – Designs schema, creates migrations
+5. **DevOps Engineer Agent** – Docker, CI/CD, deployment
+6. **QA Agent** – End-to-end testing, validation, bug reporting
+7. **Testing Agent** – Unit tests, integration tests, coverage analysis
 
-1. **Orchestrator Agent** - Coordina tutti gli agenti, assegna task, monitora progresso
-2. **Backend Developer Agent** - Implementa API, business logic, autenticazione
-3. **Frontend Developer Agent** - Crea UI, integra con backend
-4. **Database Administrator Agent** - Progetta schema, crea migrazioni
-5. **DevOps Engineer Agent** - Docker, CI/CD, deployment
-6. **QA Agent** - Test end-to-end, validazione, bug reporting
-7. **Testing Agent** - Unit tests, integration tests, coverage analysis
+### **Communication System**
 
-### **Sistema di Comunicazione**
+- **MQTT** or **Kafka** for asynchronous communication between agents (OPTIONAL)
+- Automatic **in-memory fallback** if broker is unavailable
+- Dedicated topics: `tasks.new`, `tasks.completed`, `bugs.reported`, `agent.heartbeat`, etc.
+- **Works out-of-the-box with no configuration required!** 🎯
 
-- **MQTT** o **Kafka** per comunicazione asincrona tra agenti (OPZIONALE)
-- **Falla in-memory** automatico se broker non disponibile
-- Topics dedicati: `tasks.new`, `tasks.completed`, `bugs.reported`, `agent.heartbeat`, etc.
-- **Funziona out-of-the-box senza configurazione!** 🎯
+### **💻 Dashboard & Monitoring** 🆕
 
-### **💻 Dashboard & Monitoraggio** 🆕
+- **Interactive Web Dashboard**: Displays task status in real time.
+- **Kanban Board**: Tracks each agent's progress.
+- **Rejection Details**: Shows reviewer feedback and rejection reasons directly on cards.
+- **Activity Log**: Live stream of all system actions.
 
-- **Dashboard Web Interattiva**: Visualizza lo stato dei task in tempo reale.
-- **Kanban Board**: Traccia il progresso di ogni agente.
-- **Dettagli Rejection**: Visualizza feedback dei reviewer e motivi di bocciatura direttamente sulle card.
-- **Activity Log**: Stream live di tutte le azioni di sistema.
+### **🔄 Evolution & Persistence** 🆕
 
-### **🔄 Evoluzione e Persistence** 🆕
+- **Auto-Resume**: Picks up exactly where it left off after an interruption (Ctrl+C).
+- **Project Evolution**: Allows updating existing projects with new prompts (`--update`).
+- **MVP Mode**: Ultra-fast development without Auth and without the review cycle (`--mvp`).
 
-- **Auto-Resume**: Riprende esattamente da dove si era fermato dopo un'interruzione (Ctrl+C).
-- **Project Evolution**: Permette di aggiornare progetti esistenti con nuovi prompt (`--update`).
-- **Modalità MVP**: Sviluppo ultra-rapido senza Auth e senza il ciclo di review (`--mvp`).
+### **Dynamic Skills System** 🆕
 
-### **Sistema di Skills Dinamiche** 🆕
+- **Dynamic loading** of best practices and guidelines
+- **Default skills**: backend-api, frontend-react, testing-best-practices
+- **Auto-detection**: Skills activated automatically based on the task
+- **Custom skills**: Create your own skills in `.claude/`
+- **YAML Metadata**: Specify agent types, triggers, dependencies
+- See [SKILLS_GUIDE.md](SKILLS_GUIDE.md) for full details
 
-- **Caricamento dinamico** di best practices e linee guida
-- **Skills di default**: backend-api, frontend-react, testing-best-practices
-- **Auto-detection**: Skills attivate automaticamente in base al task
-- **Custom skills**: Crea le tue skills in `.claude/`
-- **Metadata YAML**: Specifica agent types, triggers, dependencies
-- Vedi [SKILLS_GUIDE.md](SKILLS_GUIDE.md) per dettagli completi
+### **Persistent Memory**
 
-### **Memoria Persistente**
-
-- **Database SQLite** per tracciare:
-  - Azioni degli agenti (chi, cosa, quando, commit hash)
-  - Task e loro stato
+- **SQLite database** for tracking:
+  - Agent actions (who, what, when, commit hash)
+  - Tasks and their status
   - Bug reports
-  - Decisioni architetturali
-- **File Markdown** in `/memory/`:
-  - `global_memory.md` - Memoria globale
-  - `decisions.md` - Log decisioni
-  - `architecture.md` - Documentazione architettura
-  - `retrospective.md` - Retrospettive
+  - Architectural decisions
+- **Markdown files** in `/memory/`:
+  - `global_memory.md` – Global memory
+  - `decisions.md` – Decision log
+  - `architecture.md` – Architecture documentation
+  - `retrospective.md` – Retrospectives
 
 ### **Git Automation**
 
-- Commit automatici dopo ogni task completato
-- Messaggi di commit strutturati (`feat:`, `fix:`, `refactor:`, etc.)
-- Branch per agente: `agent/backend/backend_001`
-- Storicizzazione completa
+- Automatic commits after each completed task
+- Structured commit messages (`feat:`, `fix:`, `refactor:`, etc.)
+- Per-agent branches: `agent/backend/backend_001`
+- Complete history tracking
 
 ### **Anti-Idle System**
 
-- Quando un agente è idle (>30 secondi senza task):
-  - Segnala disponibilità
-  - Cerca task da altri agenti sovraccarichi
-  - Offre aiuto ad agenti in difficoltà
-- L'orchestratore redistribuisce automaticamente i task
+- When an agent is idle (>30 seconds without a task):
+  - Reports availability
+  - Looks for tasks from overloaded agents
+  - Offers help to struggling agents
+- The orchestrator automatically redistributes tasks
 
-## 📁 Struttura del Progetto
+## 📁 Project Structure
 
 ```
 hypnonyx/
-├── main.py                 # Entrypoint principale
-├── config.py              # Configurazione globale
-├── requirements.txt       # Dipendenze Python
+├── main.py                 # Main entrypoint
+├── config.py              # Global configuration
+├── requirements.txt       # Python dependencies
 │
 ├── core/
-│   ├── memory.py          # Sistema di memoria persistente
-│   └── message_broker.py  # Comunicazione MQTT/Kafka
+│   ├── memory.py          # Persistent memory system
+│   └── message_broker.py  # MQTT/Kafka communication
 │
 ├── agents/
-│   ├── base_agent.py      # Classe base per agenti
+│   ├── base_agent.py      # Base class for agents
 │   ├── orchestrator_agent.py
 │   ├── backend_agent.py
 │   ├── frontend_agent.py
@@ -98,16 +97,16 @@ hypnonyx/
 │   ├── qa_agent.py
 │   └── testing_agent.py
 │
-├── memory/                # File di memoria
+├── memory/                # Memory files
 │   ├── project_memory.db
 │   ├── global_memory.md
 │   ├── decisions.md
 │   ├── architecture.md
 │   └── retrospective.md
 │
-├── docs/                  # Documentazione generata
+├── docs/                  # Generated documentation
 │
-└── projects/              # Progetti creati dagli agenti
+└── projects/              # Projects created by agents
     └── <project_name>/
         ├── backend/
         ├── frontend/
@@ -118,31 +117,31 @@ hypnonyx/
 
 ## 🚀 Quick Start
 
-### Prerequisiti
+### Prerequisites
 
-**1. LM Studio** (richiesto):
+**1. LM Studio** (required):
 
-- Scarica: https://lmstudio.ai/
-- Scarica modello: **DeepSeek Coder 6.7B** (consigliato)
-- Avvia server locale
-- Guida completa: [LM_STUDIO_SETUP.md](LM_STUDIO_SETUP.md)
+- Download: https://lmstudio.ai/
+- Download model: **DeepSeek Coder 6.7B** (recommended)
+- Start local server
+- Full guide: [LM_STUDIO_SETUP.md](LM_STUDIO_SETUP.md)
 
-**2. Python 3.10+** e **Git**
+**2. Python 3.10+** and **Git**
 
-### 1. Installazione
+### 1. Installation
 
 ```bash
-# Clona il repository
+# Clone the repository
 git clone <repo-url>
 cd hypnonyx
 
-# Installa dipendenze
+# Install dependencies
 pip install -r requirements.txt
 ```
 
-### 2. Configurazione (Opzionale)
+### 2. Configuration (Optional)
 
-Crea un file `.env`:
+Create a `.env` file:
 
 ```env
 # LLM Configuration
@@ -160,40 +159,40 @@ GIT_AUTO_COMMIT=true
 GIT_BRANCH_PREFIX=agent
 ```
 
-### 3. Avvio Sistema
+### 3. Start the System
 
 ```bash
-# Specifica tecnologia specifica
+# Specify a specific technology stack
 python main.py --project my_app --backend fastapi --frontend react --database postgres
 
-# 🔄 Riprendi progetto esistente (Auto-detect o manuale)
+# 🔄 Resume an existing project (auto-detect or manual)
 python main.py --project ecommerce --resume
 
-# 🚀 Modalità MVP (Veloce, No Auth, No Review)
-python main.py --project startup_idea --prompt "Landing page per AI" --mvp
+# 🚀 MVP Mode (Fast, No Auth, No Review)
+python main.py --project startup_idea --prompt "Landing page for AI" --mvp
 
-# 🛠️ Evolvi un progetto esistente
-python main.py --project ecommerce --update --prompt "Aggiungi carrello e checkout"
+# 🛠️ Evolve an existing project
+python main.py --project ecommerce --update --prompt "Add cart and checkout"
 
-# 🗑️ Reset completo
+# 🗑️ Full reset
 python main.py --project test_app --reset
 ```
 
-### 4. Dashboard (Reale-Time)
+### 4. Dashboard (Real-Time)
 
 ```bash
-# Avvia la dashboard web
+# Start the web dashboard
 ./dashboard.sh
-# Apri http://localhost:5000
+# Open http://localhost:5000
 ```
 
-### 4. Setup MQTT (Opzionale ma Consigliato)
+### 4. MQTT Setup (Optional but Recommended)
 
 ```bash
-# Con Docker
+# With Docker
 docker run -d --name mosquitto -p 1883:1883 eclipse-mosquitto
 
-# O installa localmente
+# Or install locally
 # Ubuntu/Debian
 sudo apt-get install mosquitto mosquitto-clients
 
@@ -202,22 +201,22 @@ brew install mosquitto
 brew services start mosquitto
 ```
 
-## 🔧 Come Funziona
+## 🔧 How It Works
 
-### Workflow di Creazione Progetto
+### Project Creation Workflow
 
-1. **Orchestrator** riceve richiesta di creazione progetto
-2. **Decomposizione** in task atomici (API, UI, DB, tests, CI/CD, etc.)
-3. **Calcolo dipendenze** (DB → Backend → Frontend)
-4. **Distribuzione task** ai vari agenti tramite message broker
-5. **Esecuzione parallela** con monitoraggio
-6. **Auto-commit** Git dopo ogni task
-7. **Log persistente** su database e markdown
+1. **Orchestrator** receives project creation request
+2. **Decomposition** into atomic tasks (API, UI, DB, tests, CI/CD, etc.)
+3. **Dependency calculation** (DB → Backend → Frontend)
+4. **Task distribution** to various agents via message broker
+5. **Parallel execution** with monitoring
+6. **Auto-commit** to Git after each task
+7. **Persistent logging** to database and markdown
 
-### Comunicazione tra Agenti
+### Agent Communication
 
 ```python
-# Agent A pubblica un task
+# Agent A publishes a task
 await broker.publish( get_topics(self.project_id)["TASKS_NEW"], {
     "task_id": "backend_api_001",
     "type": "implement_api",
@@ -225,35 +224,35 @@ await broker.publish( get_topics(self.project_id)["TASKS_NEW"], {
     "description": "Implement REST API"
 })
 
-# Agent B (backend) riceve e esegue
-# Quando completa:
+# Agent B (backend) receives and executes
+# When complete:
 await broker.publish( get_topics(self.project_id)["TASKS_COMPLETED"], {
     "task_id": "backend_api_001",
     "result": {"status": "completed"}
 })
 
-# Orchestrator monitora e sblocca task dipendenti
+# Orchestrator monitors and unblocks dependent tasks
 ```
 
-### Sistema Anti-Idle
+### Anti-Idle System
 
 ```python
-# Ogni 5 secondi ogni agente invia heartbeat
+# Every 5 seconds each agent sends a heartbeat
 await broker.send_heartbeat(status="active" | "idle")
 
-# Se idle >30s:
+# If idle >30s:
 await broker.report_idle()
 
-# Orchestrator assegna nuovo task
+# Orchestrator assigns a new task
 await broker.publish( get_topics(self.project_id)["TASKS_ASSIGNED"], {
     "task_id": "help_backend_001",
     "assigned_to": "testing_001"
 })
 ```
 
-### Memoria e Git
+### Memory & Git
 
-Ogni azione viene tracciata:
+Every action is tracked:
 
 ```sql
 INSERT INTO project_memory (
@@ -269,47 +268,47 @@ INSERT INTO project_memory (
 );
 ```
 
-## 📊 Monitoraggio
+## 📊 Monitoring
 
-### Log in Tempo Reale
+### Real-Time Logs
 
 ```bash
-# Log del sistema
+# System log
 tail -f memory/system.log
 
-# Memoria globale
+# Global memory
 cat memory/global_memory.md
 
-# Decisioni architetturali
+# Architectural decisions
 cat memory/decisions.md
 
-# Task completati
+# Completed tasks
 sqlite3 memory/project_memory.db "SELECT * FROM project_memory ORDER BY timestamp DESC LIMIT 10;"
 ```
 
 ### Database Queries
 
 ```sql
--- Azioni recenti
+-- Recent actions
 SELECT agent, action, description, timestamp
 FROM project_memory
 ORDER BY timestamp DESC LIMIT 20;
 
--- Task per agente
+-- Tasks per agent
 SELECT agent, COUNT(*) as task_count, status
 FROM tasks
 GROUP BY agent, status;
 
--- Bug aperti
+-- Open bugs
 SELECT bug_id, severity, description, reporter_agent
 FROM bugs
 WHERE status = 'open'
 ORDER BY severity DESC;
 ```
 
-## 🔌 Estensioni
+## 🔌 Extensions
 
-### Aggiungere un Nuovo Agente
+### Adding a New Agent
 
 ```python
 from agents.base_agent import BaseAgent
@@ -324,22 +323,22 @@ class MyCustomAgent(BaseAgent):
         )
 
     async def execute(self, task: Dict) -> Any:
-        # Implementa logica specifica
+        # Implement specific logic
         if task.get("type") == "my_task":
             # Do something
             return {"status": "completed"}
 
     async def can_help(self, task: Dict) -> bool:
-        # Decide se può aiutare
+        # Decide if it can help
         return task.get("type") in ["my_task", "related_task"]
 ```
 
-### Aggiungere Nuovi Topic
+### Adding New Topics
 
-Modifica `config.py`:
+Edit `config.py`:
 
 ```python
- get_topics(self.project_id) = {
+get_topics(self.project_id) = {
     # ... existing topics ...
     "MY_NEW_TOPIC": "my.new.topic"
 }
@@ -347,53 +346,53 @@ Modifica `config.py`:
 
 ## 🐛 Troubleshooting
 
-### Sistema Funziona Senza MQTT/Kafka!
+### System Works Without MQTT/Kafka!
 
-Il sistema usa **fallback in-memory automatico** - non serve configurare nulla!
+The system uses an **automatic in-memory fallback** – no configuration needed!
 
-Se vedi errori MQTT, puoi ignorarli o disabilitare esplicitamente:
+If you see MQTT errors, you can ignore them or explicitly disable them:
 
 ```bash
-# Nel file .env
+# In the .env file
 USE_MQTT=false
 USE_KAFKA=false
 ```
 
-### Altri Problemi Comuni
+### Other Common Issues
 
-Vedi [TROUBLESHOOTING.md](TROUBLESHOOTING.md) per la guida completa con soluzioni a:
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for the complete guide with solutions for:
 
-- Errori MQTT/Kafka
+- MQTT/Kafka errors
 - Module not found
 - Git errors
 - Database locked
 - Performance issues
 
-### Test Rapido
+### Quick Test
 
 ```bash
 python test_system.py
 ```
 
-## 📖 Esempi
+## 📖 Examples
 
-### Progetto Full-Stack
+### Full-Stack Project
 
 ```bash
 python main.py --project ecommerce
 ```
 
-Genera:
+Generates:
 
-- Backend API con FastAPI
-- Frontend React con Vite
-- Database SQLite con schema
+- Backend API with FastAPI
+- React frontend with Vite
+- SQLite database with schema
 - Docker + docker-compose
 - GitHub Actions CI/CD
-- Test E2E, unit, integration
-- Documentazione completa
+- E2E, unit, and integration tests
+- Complete documentation
 
-### Solo Backend API
+### Backend API Only
 
 ```bash
 python main.py --project api_service --no-frontend --no-database
@@ -427,11 +426,11 @@ READ License https://github.com/aatel-license/hypnonyx/blob/main/LICENSE.md
 
 ## 🤝 Contributing
 
-Contributi benvenuti! Apri una PR o issue.
+Contributions are welcome! Open a PR or issue.
 
 ## 📬 Contact
 
-Per domande o supporto, apri una issue su GitHub.
+For questions or support, open an issue on GitHub.
 
 ---
 
