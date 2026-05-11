@@ -223,9 +223,9 @@ class ScrumMasterAgent(BaseAgent):
             },
         )
         logger.info(
-            f"⏳ Attesa 90s per raccogliere feedback Retrospective (Sprint {sprint_id})..."
+            f"⏳ Attesa 15s per raccogliere feedback Retrospective (Sprint {sprint_id})..."
         )
-        await asyncio.sleep(90)
+        await asyncio.sleep(15)
         await self._finalize_retrospective(sprint_id)
 
     async def _on_agent_feedback(self, message: Dict):
@@ -435,9 +435,9 @@ Feedbacks:
             },
         )
         logger.info(
-            f"⏳ Attesa 90s per raccogliere proposte Backlog Refinement (Sprint {sprint_id})..."
+            f"⏳ Attesa 15s per raccogliere proposte Backlog Refinement (Sprint {sprint_id})..."
         )
-        await asyncio.sleep(90)
+        await asyncio.sleep(15)
         await self._finalize_backlog_refinement(sprint_id)
 
     async def _on_refinement_proposal(self, message: Dict):

@@ -15,8 +15,12 @@ import uuid
 sys.path.insert(0, str(Path(__file__).parent))
 
 from config import (
-    WORKSPACE_ROOT, MEMORY_DIR, USE_UNIVERSAL_AGENTS, get_topics,
-    AGENT_SKILL_MAPPING, COMMON_SKILLS_ALL_AGENTS
+    WORKSPACE_ROOT,
+    MEMORY_DIR,
+    USE_UNIVERSAL_AGENTS,
+    get_topics,
+    AGENT_SKILL_MAPPING,
+    COMMON_SKILLS_ALL_AGENTS,
 )
 from agents.orchestrator_agent import OrchestratorAgent
 from agents.backend_agent import BackendAgent
@@ -92,6 +96,7 @@ class MultiAgentSystem:
         self.memory = MemorySystem()
         self.prompt_manager = PromptManager(self.memory)
         from config import SKILLS_DIR
+
         self.skill_manager = SkillManager([str(SKILLS_DIR)])
         self.agents = []
 
@@ -229,11 +234,11 @@ class MultiAgentSystem:
         logger.info("✓ Prompt Manager inizializzato")
 
         self.skill_manager.initialize(WORKSPACE_ROOT)
-        
+
         # Configura skill resolution da variabili d'ambiente
         self.skill_manager.set_agent_skill_mapping(AGENT_SKILL_MAPPING)
         self.skill_manager.set_common_skills(COMMON_SKILLS_ALL_AGENTS)
-        
+
         logger.info(f"✓ Skill Manager inizializzato")
         logger.info(f"  - Agent skill mapping: {AGENT_SKILL_MAPPING}")
         logger.info(f"  - Common skills per tutti: {COMMON_SKILLS_ALL_AGENTS}")
@@ -553,7 +558,7 @@ def check_dependencies():
 
 
 async def main():
-    check_dependencies()
+    # check_dependencies()
 
     parser = argparse.ArgumentParser(description="Hypnonyx Multi-Agent System")
     parser.add_argument(
