@@ -99,8 +99,42 @@ class BaseAgent:
             self._handle_backlog_refinement,
         )
 
-        tasks = [self._task_worker(), self._heartbeat_worker(), self._idle_checker()]
-        await asyncio.gather(*tasks, return_exceptions=True)
+        asyncio.create_task(self._task_worker())
+        asyncio.create_task(self._heartbeat_worker())
+        asyncio.create_task(self._idle_checker())
+
+    def _ensure_metadata_dict(self, task: Dict):
+        """Assicura che task['metadata'] sia un dizionario deserializzato."""
+        if not isinstance(task, dict):
+            return
+        metadata = task.get("metadata")
+        
+        if metadata is None:
+            task["metadata"] = {}
+            return
+            
+        if isinstance(metadata, str):
+            # Prova JSON
+            try:
+                import json
+                task["metadata"] = json.loads(metadata)
+                return
+            except Exception:
+                pass
+            # Prova AST (per stringhe Python-like)
+            try:
+                import ast
+                parsed = ast.literal_eval(metadata)
+                if isinstance(parsed, dict):
+                    task["metadata"] = parsed
+                    return
+            except Exception:
+                pass
+            # Fallback a dict vuoto se è una stringa malformata
+            task["metadata"] = {}
+        elif not isinstance(metadata, dict):
+            # Fallback per tipi inaspettati
+            task["metadata"] = {}
 
     async def _handle_new_task(self, message: Dict):
         """Handler per nuovi task"""
@@ -385,6 +419,9 @@ Respond ONLY with a JSON array:
                 if not task:
                     continue
 
+                # Assicura metadati validi
+                self._ensure_metadata_dict(task)
+                
                 task_id = task.get("task_id", "unknown")
                 task_type = task.get("type", "unknown")
 
@@ -775,6 +812,7 @@ Respond ONLY with a JSON array:
         return {}
 
     async def get_auto_fix_instruction(self, task: Dict) -> str:
+        self._ensure_metadata_dict(task)
         metadata = task.get("metadata", {})
         if not metadata.get("is_retry"):
             return ""
