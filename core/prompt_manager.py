@@ -19,6 +19,17 @@ FORMAT_INSTRUCTION = (
     "Return your output as valid JSON only. No markdown, no backticks."
 )
 
+STRUCTURE_GUIDE = """
+CRITICAL ARCHITECTURAL CONSTRAINTS:
+- BACKEND: All code MUST be in 'backend/app/'. (Entry: 'backend/app/main.py', API: 'backend/app/api/', Models: 'backend/app/models/')
+- FRONTEND: All code MUST be in 'frontend/src/'. (Entry: 'frontend/src/App.tsx', Components: 'frontend/src/components/')
+- SCRIPTS: All utility scripts MUST be in 'scripts/'.
+- TESTS: All tests MUST be in 'tests/'.
+- ROOT: Only 'requirements.txt', 'docker-compose.yml', and '.env' are allowed in the project root.
+- CONSISTENCY: Do not create duplicate files. Check existing structure before creating new paths.
+"""
+
+
 
 class PromptManager:
     """Gestore dei prompt centralizzato con caching Redis"""
@@ -85,78 +96,77 @@ class PromptManager:
 
         defaults = {
             "backend": {
-                "system": f"You are an expert backend developer. {FORMAT_INSTRUCTION} CRITICAL: Always write files using paths relative to the project root (e.g., 'backend/main.py'), NEVER absolute paths.",
+                "system": f"You are an expert backend developer. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE}",
                 "tasks": {
-                    "implement_api": "Implement the core API logic and endpoints as requested.",
-                    "implement_auth": "Implement the requested authentication and authorization system.",
+                    "implement_api": "Implement the core API logic and endpoints in 'backend/app/api/'.",
+                    "implement_auth": "Implement the authentication system in 'backend/app/core/auth.py'.",
                 },
             },
             "frontend": {
-                "system": f"You are an expert frontend developer. {FORMAT_INSTRUCTION} CRITICAL: Always write files using paths relative to the project root (e.g., 'frontend/src/App.js'), NEVER absolute paths.",
+                "system": f"You are an expert frontend developer. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE}",
                 "tasks": {
-                    "create_ui": "Create UI components using the requested technology (HTML/CSS/JS, React, Vue, etc.).",
+                    "create_ui": "Create UI components in 'frontend/src/components/'. Use TypeScript (.tsx).",
                     "integrate_api": "Integrate frontend with the backend API.",
                 },
             },
             "database": {
-                "system": f"You are an expert database administrator. {FORMAT_INSTRUCTION} CRITICAL: Always write files using paths relative to the project root (e.g., 'database/schema.sql'), NEVER absolute paths.",
+                "system": f"You are an expert database administrator. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE}",
                 "tasks": {
-                    "design_schema": "Design the database schema (SQL or NoSQL as requested).",
-                    "create_migrations": "Create database migrations or initialization scripts.",
+                    "design_schema": "Design the database schema in 'backend/app/models/'.",
+                    "create_migrations": "Create database migrations in 'database/migrations/'.",
                 },
             },
             "devops": {
-                "system": f"You are an expert DevOps engineer and Git specialist. {FORMAT_INSTRUCTION} CRITICAL: Always write files using paths relative to the project root (e.g., 'docker/Dockerfile'), NEVER absolute paths.",
+                "system": f"You are an expert DevOps engineer and Git specialist. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE}",
                 "tasks": {
                     "create_docker": "Create container configuration (e.g., Dockerfile, Compose).",
                     "setup_ci": "Setup CI/CD pipeline configuration.",
-                    "create_startup_script": "Create a professional startup script (e.g., dashboard.sh or start.py) that launches all project components (backend, frontend, etc.). It should handle dependency checks and environment variables.",
-                    "speaking_commit": "Generate a highly descriptive and meaningful commit message based on the provided changes and task description. Follow Conventional Commits format.",
+                    "create_startup_script": "Create a startup script in 'scripts/start.sh'.",
+                    "speaking_commit": "Generate a Conventional Commit message.",
                 },
             },
             "testing": {
-                "system": f"You are an expert QA engineer. {FORMAT_INSTRUCTION} CRITICAL: Always use mocking libraries (e.g., 'unittest.mock' or 'pytest-mock') to isolate components. Write tests using paths relative to the project root.",
+                "system": f"You are an expert QA engineer. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE} Always use mocking libraries.",
                 "tasks": {
-                    "write_tests": "Write unit and integration tests for the requested component. MANDATORY: Use mocks for all external dependencies and cross-module calls."
+                    "write_tests": "Write unit tests in 'tests/unit/'."
                 },
             },
             "qa": {
-                "system": f"You are an expert QA lead. {FORMAT_INSTRUCTION} CRITICAL: Always write files using paths relative to the project root (e.g., 'tests/e2e/test_main.py'), NEVER absolute paths.",
+                "system": f"You are an expert QA lead. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE}",
                 "tasks": {
-                    "write_e2e_tests": "Write end-to-end tests for the complete application.",
+                    "write_e2e_tests": "Write end-to-end tests in 'tests/e2e/'.",
                     "validate_project": "Validate the entire project requirements.",
                 },
             },
             "researcher": {
-                # ← no FORMAT_INSTRUCTION: uses chat_completion directly
-                "system": "You are a senior technical researcher. Analyze documentation and versions. Return a clean markdown report. CRITICAL: References should be exact and actionable.",
+                "system": f"You are a senior technical researcher. {STRUCTURE_GUIDE} Return a clean markdown report.",
                 "tasks": {
                     "research_tech_stack": "Research the most modern and stable tech stack for the project.",
-                    "search_docs": "Analyze official documentation for the requested technology.",
+                    "search_docs": "Analyze official documentation.",
                 },
             },
             "reviewer": {
-                "system": f"You are a senior code reviewer. You must be CRITICAL but balanced. Proactively differentiate between architectural flaws and minor implementation details. {FORMAT_INSTRUCTION}",
+                "system": f"You are a senior code reviewer. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE} You MUST reject any PR that violates the folder structure or creates duplicates.",
                 "tasks": {
-                    "review_task": "Analyze the implemented work. 1. If ARCHITECTURE: Focus on structural correctness, scalability, and completeness. DO NOT reject for missing code-level logic like specific if/else checks if the design is solid. 2. If CODE: Check for folder structure, requirements, standards, and security. Provide an approval status and specific, actionable comments."
+                    "review_task": "Check for folder structure, requirements, standards, and security. REJECT if duplicates or wrong paths are used."
                 },
             },
             "architect": {
-                "system": f"You are a senior software architect. Your goal is to design a robust, scalable, and well-structured architecture. {FORMAT_INSTRUCTION} with decisions and design patterns.",
+                "system": f"You are a senior software architect. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE} Ensure all design decisions respect the standard layout.",
                 "tasks": {
-                    "design_architecture": "Design the technical architecture for the project. Create architecture.md with: 1. System Overview. 2. Component Diagram. 3. Detailed Folder Structure. 4. API Endpoints Specification (Methods, URLs, Response structures). 5. Database Schema (Normalized). 6. Security (Auth strategy, Hashing). 7. ADRs."
+                    "design_architecture": "Design the technical architecture. MANDATORY: Specify the exact folder structure following the provided guide."
                 },
             },
             "scrum_master": {
-                # ← no FORMAT_INSTRUCTION: uses generate_structured with its own prompts
-                "system": "You are an expert Scrum Master. Your goal is to facilitate agile ceremonies, manage the backlog, and ensure the team follows Scrum principles. You must coordinate the agents and collect their feedback.",
+                "system": f"You are an expert Scrum Master. {STRUCTURE_GUIDE}",
                 "tasks": {
-                    "sprint_planning": "Plan the next sprint. Analyze the backlog and select the priority tasks for the current sprint.",
-                    "retrospective": "Facilitate the sprint retrospective. Analyze feedback from all agents and generate a summary report with action items.",
-                    "backlog_refinement": "Refine the product backlog. Clarify requirements and break down large tasks into smaller, manageable items.",
+                    "sprint_planning": "Plan the next sprint.",
+                    "retrospective": "Analyze feedback and generate action items.",
+                    "backlog_refinement": "Refine the product backlog.",
                 },
             },
         }
+
 
         for agent, pdata in defaults.items():
             await self.memory.save_agent_prompt(agent, pdata["system"], pdata["tasks"])
