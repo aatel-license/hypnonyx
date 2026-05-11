@@ -461,6 +461,10 @@ class MemorySystem:
 
         await self._run(_sync)
 
+    async def update_task_metadata(self, task_id: str, metadata: Dict):
+        """Aggiorna i metadati di un task (convenience wrapper)"""
+        await self.update_task(task_id, {"metadata": metadata})
+
     async def get_all_tasks(self, project_id: str = None) -> List[Dict]:
         """Ottieni tutti i task, opzionalmente filtrati per progetto"""
 
