@@ -3,6 +3,7 @@
 ScrumMasterAgent - Gestisce l'intero ciclo agile Scrum con supporto TOON.
 """
 
+import datetime
 import asyncio
 import logging
 import time
@@ -53,7 +54,6 @@ class ScrumMasterAgent(BaseAgent):
 
         # BaseAgent handles TASKS_NEW, TASKS_ASSIGNED, HELP_REQUEST, BUGS_REPORTED, SCRUM_CEREMONY, BACKLOG_REFINEMENT
 
-
         active_sprint = await self.memory.get_active_sprint(self.project_id)
         if active_sprint:
             self.active_sprint_id = active_sprint["sprint_id"]
@@ -74,7 +74,6 @@ class ScrumMasterAgent(BaseAgent):
             asyncio.create_task(
                 self._trigger_retrospective_with_delay(self.active_sprint_id, delay=10)
             )
-
 
     async def _trigger_retrospective_with_delay(self, sprint_id: int, delay: int = 10):
         """Attende un breve ritardo prima di lanciare la retrospective (utile per il resume)"""
@@ -175,12 +174,14 @@ class ScrumMasterAgent(BaseAgent):
         """Smaltisce i task accumulati finché il conteggio scende sotto la soglia"""
         if self._is_ending_sprint:
             return
-        
+
         while self.sprint_task_count >= TASKS_BEFORE_RETRO:
-            logger.info(f"🔄 Smaltimento backlog sprint: {self.sprint_task_count} task rimanenti...")
+            logger.info(
+                f"🔄 Smaltimento backlog sprint: {self.sprint_task_count} task rimanenti..."
+            )
             await self._safe_end_sprint()
             # Un breve sleep per permettere il completamento della retro (ora 15s)
-            await asyncio.sleep(17) 
+            await asyncio.sleep(17)
 
     async def _safe_end_sprint(self):
         if self._is_ending_sprint:
@@ -312,7 +313,6 @@ Feedbacks:
         process_actions = data.get("process_actions", [])
         failed_task_decisions = data.get("failed_task_decisions", [])
 
-
         # Salva report
         retro_file = self.project_root / "memory" / "retrospective.md"
         retro_file.parent.mkdir(exist_ok=True, parents=True)
@@ -368,15 +368,18 @@ Feedbacks:
 
         # Limita il numero di Action Items per evitare il sovraccarico agile
         import os
+
         max_tech = int(os.getenv("MAX_TECH_IMPROVEMENTS", 2))
         max_process = int(os.getenv("MAX_PROCESS_IMPROVEMENTS", 1))
-        
+
         if len(tech_actions) > max_tech:
             logger.info(f"✂️ Riducendo tech actions da {len(tech_actions)} a {max_tech}")
             tech_actions = tech_actions[:max_tech]
-        
+
         if len(process_actions) > max_process:
-            logger.info(f"✂️ Riducendo process actions da {len(process_actions)} a {max_process}")
+            logger.info(
+                f"✂️ Riducendo process actions da {len(process_actions)} a {max_process}"
+            )
             process_actions = process_actions[:max_process]
 
         # Crea task per Technical Action Items
@@ -391,32 +394,46 @@ Feedbacks:
                 "priority": 5,
                 "status": "pending",
                 "metadata": json.dumps(
-                    {"source": "retrospective", "sprint_id": sprint_id, "category": "technical"}
+                    {
+                        "source": "retrospective",
+                        "sprint_id": sprint_id,
+                        "category": "technical",
+                    }
                 ),
             }
             await self.memory.save_task(new_task)
-            await self.broker.publish(get_topics(self.project_id)["TASKS_NEW"], new_task)
+            await self.broker.publish(
+                get_topics(self.project_id)["TASKS_NEW"], new_task
+            )
 
         # Crea task per Process Action Items
         for action in process_actions:
             # I task di processo vanno preferibilmente allo Scrum Master o Architect
-            agent_type = "scrum_master" if "agile" in action.lower() or "process" in action.lower() else self._detect_agent_type(action)
+            agent_type = (
+                "scrum_master"
+                if "agile" in action.lower() or "process" in action.lower()
+                else self._detect_agent_type(action)
+            )
             new_task = {
                 "task_id": f"retro_proc_{sprint_id}_{int(time.time())}_{abs(hash(action)) % 10000}",
                 "project_id": self.project_id,
                 "type": "scrum_improvement",
                 "agent_type": agent_type,
                 "description": f"[Process Improvement] {action}",
-                "priority": 3, # Priorità ancora più bassa per il processo
+                "priority": 3,  # Priorità ancora più bassa per il processo
                 "status": "pending",
                 "metadata": json.dumps(
-                    {"source": "retrospective", "sprint_id": sprint_id, "category": "process"}
+                    {
+                        "source": "retrospective",
+                        "sprint_id": sprint_id,
+                        "category": "process",
+                    }
                 ),
             }
             await self.memory.save_task(new_task)
-            await self.broker.publish(get_topics(self.project_id)["TASKS_NEW"], new_task)
-
-
+            await self.broker.publish(
+                get_topics(self.project_id)["TASKS_NEW"], new_task
+            )
 
         await self.memory.complete_sprint(sprint_id)
 
@@ -427,14 +444,19 @@ Feedbacks:
         # FIX: Pulisce proposte precedenti per evitare accumuli/leak di altri sprint
         self.refinement_proposals = []
 
-        logger.info(f"📢 [CERIMONIA] Avvio Backlog Refinement per lo Sprint {sprint_id}...")
+        logger.info(
+            f"📢 [CERIMONIA] Avvio Backlog Refinement per lo Sprint {sprint_id}..."
+        )
         pending_tasks = await self.memory.get_pending_tasks(self.project_id)
         failed_tasks = [t for t in pending_tasks if t.get("status") == "failed"]
         pending_summary = "\n".join(
             f"- [{t.get('agent_type')}] {t.get('description', '')[:80]}"
             for t in pending_tasks[:10]
         )
-        failed_info = [f"ID: {t.get('task_id')}, Desc: {t.get('description')}" for t in failed_tasks]
+        failed_info = [
+            f"ID: {t.get('task_id')}, Desc: {t.get('description')}"
+            for t in failed_tasks
+        ]
 
         await self.broker.publish(
             get_topics(self.project_id)["BACKLOG_REFINEMENT"],
@@ -447,17 +469,30 @@ Feedbacks:
                 "timestamp": time.time(),
             },
         )
-        logger.info("⏳ In attesa di proposte dagli agenti (30s)...")
-        await asyncio.sleep(30)
+        logger.info(f"⏳ In attesa di proposte dagli agenti (45s)...")
+        await asyncio.sleep(45)
+        logger.info(
+            f"🏁 Tempo scaduto per il refinement. Ricevute {len(self.refinement_proposals)} proposte totali."
+        )
         await self._finalize_backlog_refinement(sprint_id)
 
     async def _on_refinement_proposal(self, message: Dict):
         """Riceve proposta"""
+        with open("refinement_debug.log", "a") as f:
+            f.write(
+                f"[{datetime.now()}] 📥 RAW PROPOSAL RECEIVED: project_id={message.get('project_id')}, sprint_id={message.get('sprint_id')}\n"
+            )
+
         if message.get("project_id") != self.project_id:
+            logger.debug(
+                f"Ignorato refinement di altro progetto: {message.get('project_id')}"
+            )
             return
         agent_type = message.get("agent_type")
         proposals = message.get("proposals", [])
-        logger.info(f"📥 Ricevute {len(proposals)} proposte di refinement da agent {agent_type}")
+        logger.info(
+            f"📥 Ricevute {len(proposals)} proposte di refinement da agent {agent_type}"
+        )
         for p in proposals[:5]:  # aumentato da 3 a 5 per agente
             desc = p.get("description", "") if isinstance(p, dict) else str(p)
             if desc:
@@ -641,5 +676,7 @@ Structure your response as an object with an 'items' key (list of objects with '
             await self._trigger_backlog_refinement(sprint_id=sid)
         elif task_type == "trigger_release":
             counter = await self.memory.get_sprint_counter(self.project_id)
-            await self._trigger_release(counter.get("total_sprints_completed", 0), sprint_id=sid)
+            await self._trigger_release(
+                counter.get("total_sprints_completed", 0), sprint_id=sid
+            )
         return {"status": "completed"}

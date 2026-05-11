@@ -577,9 +577,14 @@ class MemorySystem:
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT DISTINCT project_id FROM tasks UNION SELECT DISTINCT project_id FROM project_memory"
-            )
+            # Ordina i progetti per l'attività più recente (data di creazione dell'ultimo task)
+            cursor.execute("""
+                SELECT project_id FROM (
+                    SELECT project_id, MAX(created_at) as last_act FROM tasks GROUP BY project_id
+                    UNION
+                    SELECT project_id, MAX(created_at) as last_act FROM project_memory GROUP BY project_id
+                ) GROUP BY project_id ORDER BY MAX(last_act) DESC
+            """)
             projects = [row[0] for row in cursor.fetchall() if row[0]]
             conn.close()
             return projects
@@ -978,16 +983,27 @@ class MemorySystem:
 
     # --- SCRUM METHODS ---
 
-    async def create_sprint(self, project_id: str, sprint_number: int = 1) -> int:
-        """Crea un nuovo sprint nel database"""
+    async def create_sprint(self, project_id: str, sprint_number: int = None) -> int:
+        """Crea un nuovo sprint nel database con auto-incremento del numero sprint"""
         started_at = datetime.now().isoformat()
 
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
+            
+            s_num = sprint_number
+            if s_num is None:
+                # Calcola il prossimo numero sprint per questo progetto
+                cursor.execute(
+                    "SELECT MAX(sprint_number) FROM sprints WHERE project_id = ?",
+                    (project_id,)
+                )
+                res = cursor.fetchone()
+                s_num = (res[0] + 1) if (res and res[0]) else 1
+
             cursor.execute(
                 "INSERT INTO sprints (project_id, sprint_number, status, started_at) VALUES (?, ?, 'active', ?)",
-                (project_id, sprint_number, started_at),
+                (project_id, s_num, started_at),
             )
             sprint_id = cursor.lastrowid
             conn.commit()
@@ -1223,24 +1239,31 @@ class MemorySystem:
         return await self._run(_sync)
 
     async def get_refinement_proposals(
-        self, project_id: str, sprint_id: int = None
+        self, project_id: str = None, sprint_id: int = None
     ) -> List[Dict]:
-        """Recupera le proposte di refinement"""
+        """Recupera le proposte di refinement (opzionalmente per progetto/sprint)"""
 
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            if sprint_id:
+            
+            if project_id and sprint_id:
                 cursor.execute(
                     "SELECT b.*, s.sprint_number FROM backlog_refinement_items b LEFT JOIN sprints s ON b.sprint_id = s.sprint_id WHERE b.project_id = ? AND b.sprint_id = ? ORDER BY b.priority DESC",
                     (project_id, sprint_id),
                 )
-            else:
+            elif project_id:
                 cursor.execute(
                     "SELECT b.*, s.sprint_number FROM backlog_refinement_items b LEFT JOIN sprints s ON b.sprint_id = s.sprint_id WHERE b.project_id = ? ORDER BY b.created_at DESC LIMIT 50",
                     (project_id,),
                 )
+            else:
+                # Global view: most recent across all projects
+                cursor.execute(
+                    "SELECT b.*, s.sprint_number FROM backlog_refinement_items b LEFT JOIN sprints s ON b.sprint_id = s.sprint_id ORDER BY b.created_at DESC LIMIT 50"
+                )
+                
             rows = [dict(r) for r in cursor.fetchall()]
             conn.close()
             return rows

@@ -261,6 +261,10 @@ class BaseAgent:
                 logger.error(f"Error generating retrospective feedback: {e}")
 
     async def _handle_backlog_refinement(self, message: Dict):
+        from datetime import datetime
+        with open("refinement_debug.log", "a") as f:
+            f.write(f"[{datetime.now()}] 🧠 AGENT {self.agent_id} RECEIVED REFINEMENT REQUEST: project_id={message.get('project_id')}\n")
+
         if message.get("type") != "backlog_refinement_request":
             return
         if message.get("project_id") != self.project_id:
@@ -393,6 +397,10 @@ Respond ONLY with a JSON array:
                     "timestamp": time.time(),
                 },
             )
+            from datetime import datetime
+            with open("refinement_debug.log", "a") as f:
+                f.write(f"[{datetime.now()}] 📤 AGENT {self.agent_id} PUBLISHED {len(proposals)} PROPOSALS for sprint_id={sprint_id}\n")
+
             logger.info(
                 f"✅ Agent {self.agent_id} ha pubblicato {len(proposals)} proposte di refinement per lo sprint {sprint_id}."
             )
