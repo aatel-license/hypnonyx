@@ -191,9 +191,11 @@ class ScrumMasterAgent(BaseAgent):
             asyncio.create_task(self._safe_end_sprint())
 
     async def _safe_end_sprint(self):
+        if self._is_ending_sprint:
+            return
         self._is_ending_sprint = True
         try:
-            while self.sprint_task_count >= SPRINT_SIZE:
+            if self.sprint_task_count >= SPRINT_SIZE:
                 sprint_id_to_end = self.active_sprint_id
 
                 # Iniziamo subito un nuovo sprint per raccogliere i nuovi task
@@ -207,10 +209,9 @@ class ScrumMasterAgent(BaseAgent):
 
                 await self._end_sprint(sprint_id_to_end)
 
-                # Consumiamo i task dello sprint DOPO aver terminato il vecchio sprint
-                # Questo assicura che i task completati durante l'esecuzione di _end_sprint
-                # vengano conteggiati per il nuovo sprint.
                 self.sprint_task_count -= SPRINT_SIZE
+                if self.sprint_task_count < 0:
+                    self.sprint_task_count = 0
         finally:
             self._is_ending_sprint = False
 
@@ -602,9 +603,10 @@ Structure your response as an object with an 'items' key (list of objects with '
     async def execute(self, task: Dict) -> Dict[str, Any]:
         """Esegue task espliciti"""
         task_type = task.get("type")
+        sid = int(self.active_sprint_id) if self.active_sprint_id else 0
         if task_type == "backlog_refinement":
-            await self._trigger_backlog_refinement()
+            await self._trigger_backlog_refinement(sprint_id=sid)
         elif task_type == "trigger_release":
             counter = await self.memory.get_sprint_counter(self.project_id)
-            await self._trigger_release(counter.get("total_sprints_completed", 0))
+            await self._trigger_release(counter.get("total_sprints_completed", 0), sprint_id=sid)
         return {"status": "completed"}

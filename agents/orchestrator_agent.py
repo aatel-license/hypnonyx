@@ -52,6 +52,12 @@ class OrchestratorAgent(BaseAgent):
 
         self.completion_event = asyncio.Event()
 
+        # NOTE: _subscribe_to_orchestrator_topics viene chiamato in start()
+        # per garantire che l'event loop sia attivo (non in __init__)
+
+    async def start(self):
+        """Avvia l'agente e avvia le sottoscrizioni orchestratore."""
+        await super().start()
         asyncio.create_task(self._subscribe_to_orchestrator_topics())
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -1343,6 +1349,9 @@ tasks[0]{task_id,type,agent_type,description,priority,depends_on,metadata}:
             ready_tasks.sort(key=lambda x: x.get("priority", 1))
             task_to_assign = ready_tasks[0]
 
+            # FIX: mark as published=True so _publish_ready_tasks won't re-publish it
+            self._ensure_metadata_dict(task_to_assign)
+            task_to_assign["metadata"]["published"] = True
             task_to_assign["assigned_to"] = agent_id
             task_to_assign["status"] = "assigned"
             task_to_assign["assigned_at"] = time.time()
@@ -1434,6 +1443,11 @@ tasks[0]{task_id,type,agent_type,description,priority,depends_on,metadata}:
                     logger.info(
                         "Attesa di 300s per permettere al Scrum Master di completare (Retro, Refinement, Releases)..."
                     )
+
+                    # FIX: imposta l'evento PRIMA di dormire così main.py non blocca
+                    # in attesa di completion_event mentre il Scrum Master finalizza
+                    self.completion_event.set()
+
                     await asyncio.sleep(300)
 
                     # ── Post-ceremony secondary sync ──────────────────────────
