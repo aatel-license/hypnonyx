@@ -21,12 +21,13 @@ FORMAT_INSTRUCTION = (
 
 STRUCTURE_GUIDE = """
 CRITICAL ARCHITECTURAL CONSTRAINTS:
-- BACKEND: All code MUST be in 'backend/app/'. (Entry: 'backend/app/main.py', API: 'backend/app/api/', Models: 'backend/app/models/')
-- FRONTEND: All code MUST be in 'frontend/src/'. (Entry: 'frontend/src/App.tsx', Components: 'frontend/src/components/')
-- SCRIPTS: All utility scripts MUST be in 'scripts/'.
-- TESTS: All tests MUST be in 'tests/'.
-- ROOT: Only 'requirements.txt', 'docker-compose.yml', and '.env' are allowed in the project root.
-- CONSISTENCY: Do not create duplicate files. Check existing structure before creating new paths.
+1. ROOT ISOLATION: All backend code MUST reside in 'backend/'. All frontend code MUST reside in 'frontend/'. 
+2. NO ROOT POLLUTION: Do not create source files in the project root. Only global config files (e.g., .env, requirements.txt, package.json, docker-compose.yml) are allowed at the top level.
+3. ARCHITECTURAL CONSISTENCY: Before creating a file, inspect the existing directory tree. 
+   - If 'backend/app/' exists, stick to it. If 'backend/src/' exists, use that. 
+   - NEVER create duplicate or competing structures (e.g., do not have both 'backend/main.py' and 'backend/app/main.py').
+4. FRAMEWORK AGNOSTIC: You are free to use any framework (React, Vite, Vanilla JS, FastAPI, Flask, etc.). Once a framework is selected, follow its industry-standard directory layout within the 'backend/' or 'frontend/' folders.
+5. SCRIPTS & TESTS: Place utility scripts in 'scripts/' and tests in 'tests/'.
 """
 
 
@@ -98,22 +99,22 @@ class PromptManager:
             "backend": {
                 "system": f"You are an expert backend developer. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE}",
                 "tasks": {
-                    "implement_api": "Implement the core API logic and endpoints in 'backend/app/api/'.",
-                    "implement_auth": "Implement the authentication system in 'backend/app/core/auth.py'.",
+                    "implement_api": "Implement the core API logic and endpoints within the 'backend/' folder.",
+                    "implement_auth": "Implement the authentication system following the project's security standards.",
                 },
             },
             "frontend": {
                 "system": f"You are an expert frontend developer. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE}",
                 "tasks": {
-                    "create_ui": "Create UI components in 'frontend/src/components/'. Use TypeScript (.tsx).",
+                    "create_ui": "Create UI components within the 'frontend/' folder.",
                     "integrate_api": "Integrate frontend with the backend API.",
                 },
             },
             "database": {
                 "system": f"You are an expert database administrator. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE}",
                 "tasks": {
-                    "design_schema": "Design the database schema in 'backend/app/models/'.",
-                    "create_migrations": "Create database migrations in 'database/migrations/'.",
+                    "design_schema": "Design the database schema using the project's models folder.",
+                    "create_migrations": "Create database migrations in the appropriate migrations folder.",
                 },
             },
             "devops": {
@@ -121,14 +122,14 @@ class PromptManager:
                 "tasks": {
                     "create_docker": "Create container configuration (e.g., Dockerfile, Compose).",
                     "setup_ci": "Setup CI/CD pipeline configuration.",
-                    "create_startup_script": "Create a startup script in 'scripts/start.sh'.",
+                    "create_startup_script": "Create a startup script in 'scripts/'.",
                     "speaking_commit": "Generate a Conventional Commit message.",
                 },
             },
             "testing": {
                 "system": f"You are an expert QA engineer. {FORMAT_INSTRUCTION} {STRUCTURE_GUIDE} Always use mocking libraries.",
                 "tasks": {
-                    "write_tests": "Write unit tests in 'tests/unit/'."
+                    "write_tests": "Write unit tests in 'tests/'."
                 },
             },
             "qa": {
@@ -138,6 +139,7 @@ class PromptManager:
                     "validate_project": "Validate the entire project requirements.",
                 },
             },
+
             "researcher": {
                 "system": f"You are a senior technical researcher. {STRUCTURE_GUIDE} Return a clean markdown report.",
                 "tasks": {
