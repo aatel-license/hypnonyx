@@ -18,15 +18,23 @@ class SkillManager:
     """Gestisce il caricamento e l'utilizzo di skills dinamiche da percorsi multipli"""
 
     def __init__(self, skills_dirs: Optional[List[str]] = None):
-        self.skills_dirs: List[Path] = (
+        # Salva i percorsi originali (priorità massima)
+        self._skills_dirs: List[Path] = (
             [Path(d) for d in skills_dirs] if skills_dirs else []
         )
+        self.skills_dirs: List[Path] = list(self._skills_dirs)
         self.skills: Dict[str, Dict] = {}
         self.skills_cache: Dict[str, str] = {}
 
     def initialize(self, workspace_root: Optional[Path] = None):
-        """Inizializza il sistema di skills cercando in percorsi globali e locali"""
-        self.skills_dirs = []
+        """Inizializza il sistema di skills cercando in percorsi globali e locali
+        
+        Ordine di priorità (primo trovato vince):
+        1. Percorsi passati al costruttore (es. SKILLS_DIR configurata)
+        2. $HOME/.claude
+        3. Workspace Root .claude
+        """
+        self.skills_dirs = list(self._skills_dirs) if self._skills_dirs else []
 
         # 1. $HOME/.claude
         home_claude = Path.home() / ".claude"
@@ -215,24 +223,30 @@ class SkillManager:
     # SKILL RESOLUTION PER AGENTE (da variabili d'ambiente)
     # ============================================================
 
-    def set_agent_skill_mapping(self, mapping: Dict[str, str]):
-        """Imposta la mappa delle skill specifiche per agente da env"""
+    def set_agent_skill_mapping(self, mapping: Dict[str, List[str]]):
+        """Imposta la mappa delle skill specifiche per agente da env
+        
+        mapping: { agent_type: [skill1, skill2, ...] }
+        """
         self._agent_skill_mapping = mapping
 
     def set_common_skills(self, common_skills: List[str]):
         """Imposta le skills comuni a tutti gli agenti da env"""
         self._common_skills = common_skills if common_skills else []
 
-    def get_agent_skill(self, agent_type: str) -> Optional[str]:
-        """Ottiene la skill specifica per agente (da env AGENT_SKILL_*)
+    def get_agent_skills(self, agent_type: str) -> List[str]:
+        """Ottiene le skill specifiche per agente (da env AGENT_SKILL_<TYPE>)
+        
+        Ritorna una lista di nomi skill.
         
         Priorità:
         1. Skill esplicita nel task (gestita da _task_worker)
         2. Skill specifica per agente configurata in env
-        3. Nessuna → ritorna None
+        3. Nessuna → ritorna []
         """
         agent_mapping = getattr(self, '_agent_skill_mapping', {}) or {}
-        return agent_mapping.get(agent_type)
+        skills = agent_mapping.get(agent_type, [])
+        return skills if isinstance(skills, list) else [skills]
 
     def get_common_skills_for_agent(self, agent_type: str) -> List[str]:
         """Ottiene le skills comuni a tutti gli agenti (da env COMMON_SKILLS_ALL_AGENTS)
@@ -248,7 +262,7 @@ class SkillManager:
     ) -> List[str]:
         """Risolve TUTTE le skill per un agente:
         
-        1. Skill specifica da AGENT_SKILL_<TYPE>
+        1. Skill specifiche da AGENT_SKILL_<TYPE> (lista)
         2. Skills comuni da COMMON_SKILLS_ALL_AGENTS
         3. Fallback: trigger detection
         
@@ -257,11 +271,11 @@ class SkillManager:
         result = []
         seen = set()
 
-        # 1. Skill specifica per agente
-        agent_skill = self.get_agent_skill(agent_type)
-        if agent_skill and agent_skill not in seen:
-            result.append(agent_skill)
-            seen.add(agent_skill)
+        # 1. Skill specifiche per agente (lista)
+        for agent_skill in self.get_agent_skills(agent_type):
+            if agent_skill and agent_skill not in seen:
+                result.append(agent_skill)
+                seen.add(agent_skill)
 
         # 2. Skills comuni a tutti
         for skill_name in self.get_common_skills_for_agent(agent_type):

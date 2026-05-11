@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from typing import Dict, List
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,7 +15,8 @@ DOCS_DIR = BASE_DIR / "docs"
 DB_PATH = MEMORY_DIR / "project_memory.db"
 
 # Create directories
-for dir_path in [WORKSPACE_ROOT, MEMORY_DIR, DOCS_DIR]:
+SKILLS_DIR = Path(os.getenv("SKILLS_DIR", "skills"))
+for dir_path in [WORKSPACE_ROOT, MEMORY_DIR, DOCS_DIR, SKILLS_DIR]:
     dir_path.mkdir(exist_ok=True, parents=True)
 
 # ============================================================
@@ -288,31 +290,31 @@ AGENT_LLM_MAPPING = {
 
 # ============================================================
 # SKILLS CONFIGURATION
-# Per-agente skill (una sola skill principale per agente)
-# Formato: nome_skill o empty → nessuna skill specifica
+# Per-agente: liste di skill (comma-separated) per ogni agente
+# Formato: nome_skill1,nome_skill2 → lista di skill specifiche
 # ============================================================
-AGENT_SKILL_MAPPING = {
-    "backend": os.getenv("AGENT_SKILL_BACKEND", ""),
-    "frontend": os.getenv("AGENT_SKILL_FRONTEND", ""),
-    "architect": os.getenv("AGENT_SKILL_ARCHITECT", ""),
-    "database": os.getenv("AGENT_SKILL_DATABASE", ""),
-    "devops": os.getenv("AGENT_SKILL_DEVOPS", ""),
-    "qa": os.getenv("AGENT_SKILL_QA", ""),
-    "testing": os.getenv("AGENT_SKILL_TESTING", ""),
-    "scrum_master": os.getenv("AGENT_SKILL_SCRUM", ""),
-    "researcher": os.getenv("AGENT_SKILL_RESEARCHER", ""),
-    "reviewer": os.getenv("AGENT_SKILL_REVIEWER", ""),
-    "orchestrator": os.getenv("AGENT_SKILL_ORCHESTRATOR", ""),
+def _parse_skill_list(env_var: str, default: str = "") -> List[str]:
+    """Parse a comma-separated list of skills from an environment variable."""
+    raw = os.getenv(env_var, default).strip().lower()
+    return [s.strip() for s in raw.split(",") if s.strip()] if raw else []
+
+
+AGENT_SKILL_MAPPING: Dict[str, List[str]] = {
+    "backend": _parse_skill_list("AGENT_SKILL_BACKEND"),
+    "frontend": _parse_skill_list("AGENT_SKILL_FRONTEND"),
+    "architect": _parse_skill_list("AGENT_SKILL_ARCHITECT"),
+    "database": _parse_skill_list("AGENT_SKILL_DATABASE"),
+    "devops": _parse_skill_list("AGENT_SKILL_DEVOPS"),
+    "qa": _parse_skill_list("AGENT_SKILL_QA"),
+    "testing": _parse_skill_list("AGENT_SKILL_TESTING"),
+    "scrum_master": _parse_skill_list("AGENT_SKILL_SCRUM"),
+    "researcher": _parse_skill_list("AGENT_SKILL_RESEARCHER"),
+    "reviewer": _parse_skill_list("AGENT_SKILL_REVIEWER"),
+    "orchestrator": _parse_skill_list("AGENT_SKILL_ORCHESTRATOR"),
 }
 
 # Skills comuni a tutti gli agenti (lista separata da virgola)
-_common_skills_raw = os.getenv(
-    "COMMON_SKILLS_ALL_AGENTS",
-    ""
-).strip().lower()
-COMMON_SKILLS_ALL_AGENTS = [
-    s.strip() for s in _common_skills_raw.split(",") if s.strip()
-] if _common_skills_raw else []
+COMMON_SKILLS_ALL_AGENTS = _parse_skill_list("COMMON_SKILLS_ALL_AGENTS")
 
 # Situation-based mapping
 SITUATION_LLM_MAPPING = {

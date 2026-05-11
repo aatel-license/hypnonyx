@@ -91,7 +91,8 @@ class MultiAgentSystem:
 
         self.memory = MemorySystem()
         self.prompt_manager = PromptManager(self.memory)
-        self.skill_manager = SkillManager()
+        from config import SKILLS_DIR
+        self.skill_manager = SkillManager([str(SKILLS_DIR)])
         self.agents = []
 
         logger.info(f"Inizializzato Multi-Agent System per progetto: {project_name}")
