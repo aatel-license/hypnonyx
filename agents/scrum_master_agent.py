@@ -351,6 +351,14 @@ Feedbacks:
             elif decision == "ignore":
                 logger.info(f"🚫 Task {tid} ignorato come irrilevante.")
 
+        # Limita il numero di Action Items per evitare il sovraccarico agile
+        import os
+        max_improvements = int(os.getenv("MAX_AGILE_IMPROVEMENTS_PER_SPRINT", 3))
+        
+        if len(actions) > max_improvements:
+            logger.info(f"✂️ Riducendo action items da {len(actions)} a {max_improvements} (limite MAX_AGILE_IMPROVEMENTS_PER_SPRINT)")
+            actions = actions[:max_improvements]
+
         # Crea task per Action Items
         for action in actions:
             agent_type = self._detect_agent_type(action)
@@ -360,7 +368,7 @@ Feedbacks:
                 "type": "scrum_improvement",
                 "agent_type": agent_type,
                 "description": f"[Agile Improvement] {action}",
-                "priority": 10,
+                "priority": 5, # Abbassata priorità (default era 10) per non bloccare sviluppo
                 "status": "pending",
                 "metadata": json.dumps(
                     {"source": "retrospective", "sprint_id": sprint_id}
@@ -371,6 +379,7 @@ Feedbacks:
             await self.broker.publish(
                 get_topics(self.project_id)["TASKS_NEW"], new_task
             )
+
 
         await self.memory.complete_sprint(sprint_id)
 
