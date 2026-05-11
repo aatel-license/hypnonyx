@@ -374,11 +374,11 @@ Respond ONLY with a JSON array:
         return ""
 
     async def _task_worker(self):
-        """Worker che esegue i task dalla coda"""
+        """Worker per processare i task in coda"""
         while self.running:
             try:
                 try:
-                    task = await asyncio.wait_for(self.tasks_queue.get(), timeout=1.0)
+                    task = await asyncio.wait_for(self.tasks_queue.get(), timeout=5.0)
                 except asyncio.TimeoutError:
                     continue
 
@@ -522,9 +522,7 @@ Respond ONLY with a JSON array:
                         # che l'idle_checker segnali idle durante task lunghi
                         self.last_activity = time.time()
 
-                        logger.info(f"DEBUG: Calling execute for task {task_id}")
                         result = await self.execute(task)
-                        logger.info(f"DEBUG: Returned from execute for task {task_id}")
 
                         if (
                             isinstance(result, dict)
@@ -571,7 +569,6 @@ Respond ONLY with a JSON array:
                         self.pending_task_ids.discard(task_id)
 
                         logger.info(
-                            f"DEBUG: Notifying completion to broker for {task_id}"
                         )
                         await self.broker.publish(
                             get_topics(self.project_id)["TASKS_COMPLETED"],
@@ -592,7 +589,6 @@ Respond ONLY with a JSON array:
                         if attempts > 1:
                             action_desc += f" (Riuscito al tentativo {attempts})"
 
-                        logger.info(f"DEBUG: Calling log_action for task {task_id}")
                         await self.memory.log_action(
                             agent=self.agent_id,
                             action=f"completed_{task_type}",
@@ -700,11 +696,10 @@ Respond ONLY with a JSON array:
         return self.skill_manager.find_skill_by_trigger(search_text)
 
     async def collect_retry_context(self, task: Dict) -> str:
-        metadata = task.get("metadata", {})
-        if not metadata.get("is_retry"):
-            return ""
+        """Raccoglie contesto per il retry (ricerca web + documentazione)"""
+        last_error = task.get("metadata", {}).get("last_error", "unknown error")
+        query = f"Error fix for {last_error} in {task.get('type')} task"
 
-        last_error = metadata.get("last_error")
         if not last_error:
             return ""
 

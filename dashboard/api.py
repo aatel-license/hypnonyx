@@ -376,5 +376,5 @@ app.mount("/", StaticFiles(directory=str(static_path), html=True), name="static"
 
 if __name__ == "__main__":
     import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import random
+    uvicorn.run(app, host="0.0.0.0", port=random.randint(9000, 16500))
