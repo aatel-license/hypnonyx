@@ -1677,3 +1677,24 @@ initWebSocket();
 NotificationManager.init();
 updateDashboard();
 setInterval(updateDashboard, 10000); // Fallback se WS fallisce
+
+// --- Back to Top Logic ---
+(function() {
+  const backToTopBtn = document.getElementById("back-to-top");
+  if (!backToTopBtn) return;
+
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 400) {
+      backToTopBtn.classList.add("visible");
+    } else {
+      backToTopBtn.classList.remove("visible");
+    }
+  });
+
+  backToTopBtn.addEventListener("click", () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  });
+})();
