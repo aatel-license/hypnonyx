@@ -399,8 +399,8 @@ def get_topics(project_id: str) -> dict:
 
 
 # Sprint configuration
-SPRINT_SIZE = int(
-    os.getenv("SPRINT_SIZE", "2")
+TASKS_BEFORE_RETRO = int(
+    os.getenv("TASKS_BEFORE_RETRO", "2")
 )  # Task per sprint (ogni 2 task = 1 sprint → retro + backlog refinement)
 BACKLOG_REFINEMENT_INTERVAL = int(
     os.getenv("BACKLOG_REFINEMENT_INTERVAL", "1")

@@ -12,7 +12,7 @@ from typing import Dict, Any, List, Optional
 from agents.base_agent import BaseAgent
 from config import (
     get_topics,
-    SPRINT_SIZE,
+    TASKS_BEFORE_RETRO,
     BACKLOG_REFINEMENT_INTERVAL,
     RELEASE_SPRINT_INTERVAL,
 )
@@ -165,10 +165,10 @@ class ScrumMasterAgent(BaseAgent):
         self.sprint_task_count += 1
         local_sprint_num = await self._get_local_sprint_num()
         logger.info(
-            f"📊 Sprint {local_sprint_num} Progress: {self.sprint_task_count}/{SPRINT_SIZE} tasks completed."
+            f"📊 Sprint {local_sprint_num} Progress: {self.sprint_task_count}/{TASKS_BEFORE_RETRO} tasks completed."
         )
 
-        if self.sprint_task_count >= SPRINT_SIZE and not self._is_ending_sprint:
+        if self.sprint_task_count >= TASKS_BEFORE_RETRO and not self._is_ending_sprint:
             # Crea un task per non bloccare l'event loop e non perdere task complessi
             asyncio.create_task(self._safe_end_sprint())
 
@@ -177,7 +177,7 @@ class ScrumMasterAgent(BaseAgent):
             return
         self._is_ending_sprint = True
         try:
-            if self.sprint_task_count >= SPRINT_SIZE:
+            if self.sprint_task_count >= TASKS_BEFORE_RETRO:
                 sprint_id_to_end = self.active_sprint_id
 
                 # Iniziamo subito un nuovo sprint per raccogliere i nuovi task
@@ -191,7 +191,7 @@ class ScrumMasterAgent(BaseAgent):
 
                 await self._end_sprint(sprint_id_to_end)
 
-                self.sprint_task_count -= SPRINT_SIZE
+                self.sprint_task_count -= TASKS_BEFORE_RETRO
                 if self.sprint_task_count < 0:
                     self.sprint_task_count = 0
         finally:
