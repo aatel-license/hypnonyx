@@ -25,6 +25,7 @@ class MemorySystem:
     async def _run(self, func, *args):
         """Esegue una funzione SQLite sincrona in un thread separato per non bloccare l'event loop."""
         import asyncio
+
         return await asyncio.to_thread(func, *args)
 
     def _initialize_sync(self):
@@ -99,10 +100,10 @@ class MemorySystem:
             """)
 
         # Check for missing columns in existing tables (project_id migration)
-        for table in ["tasks", "project_memory"]:
+        for table in ["tasks", "project_memory", "bugs", "architecture_decisions"]:
             cursor.execute(f"PRAGMA table_info({table})")
             cols = [c[1] for c in cursor.fetchall()]
-            if "project_id" not in cols:
+            if cols and "project_id" not in cols:
                 logger.info(f"Aggiunta colonna 'project_id' a tabella {table}")
                 cursor.execute(
                     f"ALTER TABLE {table} ADD COLUMN project_id TEXT DEFAULT 'default_project'"
@@ -129,6 +130,7 @@ class MemorySystem:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS bugs (
                 bug_id TEXT PRIMARY KEY,
+                project_id TEXT,
                 severity TEXT,
                 description TEXT,
                 reporter_agent TEXT,
@@ -143,6 +145,7 @@ class MemorySystem:
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS architecture_decisions (
                 decision_id TEXT PRIMARY KEY,
+                project_id TEXT,
                 title TEXT NOT NULL,
                 description TEXT,
                 rationale TEXT,
@@ -335,7 +338,16 @@ class MemorySystem:
                 (timestamp, project_id, agent, action, description, file_modified, commit_hash, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-                (timestamp, project_id, agent, action, description, file_modified, commit_hash, meta_str),
+                (
+                    timestamp,
+                    project_id,
+                    agent,
+                    action,
+                    description,
+                    file_modified,
+                    commit_hash,
+                    meta_str,
+                ),
             )
             conn.commit()
             conn.close()
@@ -365,7 +377,17 @@ class MemorySystem:
                 INSERT OR REPLACE INTO tasks (task_id, project_id, type, agent_type, description, priority, metadata, depends_on, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-                (task_id, project_id, task_type, agent_type, description, priority, meta_str, dep_str, "pending"),
+                (
+                    task_id,
+                    project_id,
+                    task_type,
+                    agent_type,
+                    description,
+                    priority,
+                    meta_str,
+                    dep_str,
+                    "pending",
+                ),
             )
             conn.commit()
             conn.close()
@@ -374,6 +396,7 @@ class MemorySystem:
 
     async def get_task(self, task_id: str) -> Optional[Dict]:
         """Ottieni un singolo task per ID"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -440,6 +463,7 @@ class MemorySystem:
 
     async def get_all_tasks(self, project_id: str = None) -> List[Dict]:
         """Ottieni tutti i task, opzionalmente filtrati per progetto"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -463,24 +487,30 @@ class MemorySystem:
                     task["metadata"] = json.loads(task["metadata"])
                 except Exception:
                     task["metadata"] = {}
-            task["depends_on"] = json.loads(task["depends_on"]) if task.get("depends_on") else []
+            task["depends_on"] = (
+                json.loads(task["depends_on"]) if task.get("depends_on") else []
+            )
             tasks.append(task)
         return tasks
 
     async def has_tasks(self, project_id: str) -> bool:
         """Verifica se esistono task per un dato progetto"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute("SELECT COUNT(*) FROM tasks WHERE project_id = ?", (project_id,))
+            cursor.execute(
+                "SELECT COUNT(*) FROM tasks WHERE project_id = ?", (project_id,)
+            )
             count = cursor.fetchone()[0]
             conn.close()
             return count
-        return (await self._run(_sync)) > 0
 
+        return (await self._run(_sync)) > 0
 
     async def get_pending_tasks(self, project_id: str = None) -> List[Dict]:
         """Ottieni task non completati (pending o failed)"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -491,7 +521,9 @@ class MemorySystem:
                     (project_id,),
                 )
             else:
-                cursor.execute("SELECT * FROM tasks WHERE status IN ('pending', 'failed') ORDER BY priority DESC, created_at ASC")
+                cursor.execute(
+                    "SELECT * FROM tasks WHERE status IN ('pending', 'failed') ORDER BY priority DESC, created_at ASC"
+                )
             rows = [dict(r) for r in cursor.fetchall()]
             conn.close()
             return rows
@@ -504,12 +536,17 @@ class MemorySystem:
                     task["metadata"] = json.loads(task["metadata"])
                 except Exception:
                     task["metadata"] = {}
-            task["depends_on"] = json.loads(task["depends_on"]) if task.get("depends_on") else []
+            task["depends_on"] = (
+                json.loads(task["depends_on"]) if task.get("depends_on") else []
+            )
             tasks.append(task)
         return tasks
 
-    async def get_recent_actions(self, limit: int = 20, project_id: str = None) -> List[Dict]:
+    async def get_recent_actions(
+        self, limit: int = 20, project_id: str = None
+    ) -> List[Dict]:
         """Ottieni azioni recenti, opzionalmente filtrate per progetto"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -527,39 +564,83 @@ class MemorySystem:
             actions = [dict(r) for r in cursor.fetchall()]
             conn.close()
             return actions
+
         return await self._run(_sync)
 
     async def get_projects(self) -> List[str]:
         """Ritorna la lista di ID progetto unici per la dashboard"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            cursor.execute("SELECT DISTINCT project_id FROM tasks UNION SELECT DISTINCT project_id FROM project_memory")
+            cursor.execute(
+                "SELECT DISTINCT project_id FROM tasks UNION SELECT DISTINCT project_id FROM project_memory"
+            )
             projects = [row[0] for row in cursor.fetchall() if row[0]]
             conn.close()
             return projects
+
         return await self._run(_sync)
 
     async def clear_project_data(self, project_id: str):
         logger.info(f"Wiping data for project: {project_id}")
-        retro_file = self.memory_dir / "retrospective.md"
+
+        # 1. Cancellazione file fisici di memoria (report)
+        project_memory_dir = self.memory_dir
+        # Se lo ScrumMaster salva in paths relativi al progetto, puliamo anche quelli
+        retro_file = project_memory_dir / "retrospective.md"
+        if retro_file.exists():
+            try:
+                retro_file.unlink()
+                logger.info(f"✓ File retrospective.md eliminato.")
+            except Exception as e:
+                logger.warning(f"Impossibile eliminare {retro_file}: {e}")
 
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             try:
+                # 2. Pulizia tabelle database
                 cursor.execute("DELETE FROM tasks WHERE project_id = ?", (project_id,))
-                cursor.execute("DELETE FROM project_memory WHERE project_id = ?", (project_id,))
-                cursor.execute("SELECT sprint_id FROM sprints WHERE project_id = ?", (project_id,))
-                for (s_id,) in cursor.fetchall():
-                    cursor.execute("DELETE FROM retrospectives WHERE sprint_id = ?", (s_id,))
-                cursor.execute("DELETE FROM sprints WHERE project_id = ?", (project_id,))
-                cursor.execute("DELETE FROM releases WHERE project_id = ?", (project_id,))
-                cursor.execute("DELETE FROM backlog_refinement_items WHERE project_id = ?", (project_id,))
-                cursor.execute("DELETE FROM sprint_counters WHERE project_id = ?", (project_id,))
-                cursor.execute("DELETE FROM token_usage WHERE project_id = ?", (project_id,))
-                cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('sprints', 'retrospectives', 'backlog_refinement_items', 'releases')")
+                cursor.execute(
+                    "DELETE FROM project_memory WHERE project_id = ?", (project_id,)
+                )
+                cursor.execute("DELETE FROM bugs WHERE project_id = ?", (project_id,))
+                cursor.execute(
+                    "DELETE FROM architecture_decisions WHERE project_id = ?",
+                    (project_id,),
+                )
+
+                # Sprints e Retrospectives (Cascading manuale)
+                cursor.execute(
+                    "SELECT sprint_id FROM sprints WHERE project_id = ?", (project_id,)
+                )
+                sprint_ids = [row[0] for row in cursor.fetchall()]
+                for s_id in sprint_ids:
+                    cursor.execute(
+                        "DELETE FROM retrospectives WHERE sprint_id = ?", (s_id,)
+                    )
+
+                cursor.execute(
+                    "DELETE FROM sprints WHERE project_id = ?", (project_id,)
+                )
+                cursor.execute(
+                    "DELETE FROM releases WHERE project_id = ?", (project_id,)
+                )
+                cursor.execute(
+                    "DELETE FROM backlog_refinement_items WHERE project_id = ?",
+                    (project_id,),
+                )
+                cursor.execute(
+                    "DELETE FROM sprint_counters WHERE project_id = ?", (project_id,)
+                )
+                cursor.execute(
+                    "DELETE FROM token_usage WHERE project_id = ?", (project_id,)
+                )
                 conn.commit()
+                logger.info(
+                    f"✓ Database pulito chirurgicamente per il progetto {project_id}"
+                )
             except Exception as e:
                 conn.rollback()
                 logger.error(f"Error wiping project data: {e}")
@@ -572,17 +653,36 @@ class MemorySystem:
             retro_file.unlink()
         logger.info(f"✓ Data for project {project_id} wiped successfully.")
 
-    async def save_architecture_decision(self, decision_id, title, description, rationale, decided_by, alternatives=None):
+    async def save_architecture_decision(
+        self,
+        project_id,
+        decision_id,
+        title,
+        description,
+        rationale,
+        decided_by,
+        alternatives=None,
+    ):
         """Salva una decisione architetturale"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute(
-                "INSERT OR REPLACE INTO architecture_decisions (decision_id, title, description, rationale, decided_by, alternatives) VALUES (?, ?, ?, ?, ?, ?)",
-                (decision_id, title, description, rationale, decided_by, alternatives),
+                "INSERT OR REPLACE INTO architecture_decisions (project_id, decision_id, title, description, rationale, decided_by, alternatives) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    project_id,
+                    decision_id,
+                    title,
+                    description,
+                    rationale,
+                    decided_by,
+                    alternatives,
+                ),
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
     async def add_retrospective(self, title: str, content: str):
@@ -594,9 +694,12 @@ class MemorySystem:
         with open(retro_file, "a") as f:
             f.write(entry)
 
-    async def save_agent_prompt(self, agent_type: str, system_prompt: str, task_templates: Dict = None):
+    async def save_agent_prompt(
+        self, agent_type: str, system_prompt: str, task_templates: Dict = None
+    ):
         """Salva o aggiorna un prompt per un tipo di agente"""
         tmpl_str = json.dumps(task_templates) if task_templates else None
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -606,18 +709,23 @@ class MemorySystem:
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
     async def get_agent_prompt(self, agent_type: str) -> Optional[Dict]:
         """Ottiene il prompt salvato per un agente"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM agent_prompts WHERE agent_type = ?", (agent_type,))
+            cursor.execute(
+                "SELECT * FROM agent_prompts WHERE agent_type = ?", (agent_type,)
+            )
             row = cursor.fetchone()
             conn.close()
             return dict(row) if row else None
+
         raw = await self._run(_sync)
         if raw and raw.get("task_templates"):
             raw["task_templates"] = json.loads(raw["task_templates"])
@@ -625,6 +733,7 @@ class MemorySystem:
 
     async def update_agent_prompt(self, agent_type: str, new_prompt: str):
         """Aggiorna il system prompt di un agente"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -640,24 +749,48 @@ class MemorySystem:
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
     # --- TOKEN USAGE METHODS ---
 
-    async def log_token_usage(self, agent_id, project_id, model, prompt_tokens, completion_tokens, total_tokens, cost, is_toon=False, saved_tokens=0):
+    async def log_token_usage(
+        self,
+        agent_id,
+        project_id,
+        model,
+        prompt_tokens,
+        completion_tokens,
+        total_tokens,
+        cost,
+        is_toon=False,
+        saved_tokens=0,
+    ):
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT INTO token_usage (agent_id, project_id, model, prompt_tokens, completion_tokens, total_tokens, cost, is_toon, saved_tokens) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (agent_id, project_id, model, prompt_tokens, completion_tokens, total_tokens, cost, 1 if is_toon else 0, saved_tokens),
+                (
+                    agent_id,
+                    project_id,
+                    model,
+                    prompt_tokens,
+                    completion_tokens,
+                    total_tokens,
+                    cost,
+                    1 if is_toon else 0,
+                    saved_tokens,
+                ),
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
     async def get_agent_stats(self, project_id: Optional[str] = None) -> List[Dict]:
         """Restituisce statistiche di token/costi per gli agenti, inclusi i prompt"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -682,19 +815,27 @@ class MemorySystem:
             for data in stats:
                 agent_type = data["agent_id"].split("_")[0]
                 data["system_prompt"] = prompts.get(agent_type, "")
-                cursor.execute("SELECT COUNT(*) FROM agent_documents WHERE agent_type = ?", (agent_type,))
+                cursor.execute(
+                    "SELECT COUNT(*) FROM agent_documents WHERE agent_type = ?",
+                    (agent_type,),
+                )
                 data["doc_count"] = cursor.fetchone()[0]
                 results.append(data)
             conn.close()
             return results
+
         return await self._run(_sync)
 
     # --- AGENT DOCUMENTS METHODS ---
 
-    async def add_agent_document(self, agent_type: str, doc_type: str, source: str, content: str) -> str:
+    async def add_agent_document(
+        self, agent_type: str, doc_type: str, source: str, content: str
+    ) -> str:
         """Aggiunge un documento al contesto permanente di un agente"""
         import uuid
+
         doc_id = str(uuid.uuid4())
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -704,43 +845,58 @@ class MemorySystem:
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
         return doc_id
 
     async def get_agent_documents(self, agent_type: str) -> List[Dict]:
         """Recupera tutti i documenti associati a un tipo di agente"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM agent_documents WHERE agent_type = ? ORDER BY created_at DESC", (agent_type,))
+            cursor.execute(
+                "SELECT * FROM agent_documents WHERE agent_type = ? ORDER BY created_at DESC",
+                (agent_type,),
+            )
             docs = [dict(r) for r in cursor.fetchall()]
             conn.close()
             return docs
+
         return await self._run(_sync)
 
     async def delete_agent_document(self, doc_id: str):
         """Elimina un documento dal contesto permanente di un agente"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute("DELETE FROM agent_documents WHERE id = ?", (doc_id,))
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
     # --- DOMAIN INTELLIGENCE METHODS ---
 
-    async def get_domain_knowledge_by_topic(self, agent_id: str, topic: str) -> Optional[Dict]:
+    async def get_domain_knowledge_by_topic(
+        self, agent_id: str, topic: str
+    ) -> Optional[Dict]:
         """Ottiene la domain knowledge per uno specifico topic e agente"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM agent_domain_knowledge WHERE agent_id = ? AND topic = ?", (agent_id, topic))
+            cursor.execute(
+                "SELECT * FROM agent_domain_knowledge WHERE agent_id = ? AND topic = ?",
+                (agent_id, topic),
+            )
             row = cursor.fetchone()
             conn.close()
             return dict(row) if row else None
+
         raw = await self._run(_sync)
         if raw:
             if raw.get("key_points"):
@@ -749,23 +905,53 @@ class MemorySystem:
                 raw["contradictions"] = json.loads(raw["contradictions"])
         return raw
 
-    async def save_domain_knowledge(self, id, agent_id, domain, topic, summary, key_points, contradictions, source_count, confidence):
+    async def save_domain_knowledge(
+        self,
+        id,
+        agent_id,
+        domain,
+        topic,
+        summary,
+        key_points,
+        contradictions,
+        source_count,
+        confidence,
+    ):
         """Salva o aggiorna la domain knowledge"""
         kp_str = json.dumps(key_points) if isinstance(key_points, list) else key_points
-        co_str = json.dumps(contradictions) if isinstance(contradictions, list) else contradictions
+        co_str = (
+            json.dumps(contradictions)
+            if isinstance(contradictions, list)
+            else contradictions
+        )
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
             cursor.execute(
                 "INSERT OR REPLACE INTO agent_domain_knowledge (id, agent_id, domain, topic, synthesized_summary, key_points, contradictions, source_count, confidence_score, last_updated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)",
-                (id, agent_id, domain, topic, summary, kp_str, co_str, source_count, confidence),
+                (
+                    id,
+                    agent_id,
+                    domain,
+                    topic,
+                    summary,
+                    kp_str,
+                    co_str,
+                    source_count,
+                    confidence,
+                ),
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
-    async def get_top_domain_knowledge(self, agent_id: str, limit: int = 5) -> List[Dict]:
+    async def get_top_domain_knowledge(
+        self, agent_id: str, limit: int = 5
+    ) -> List[Dict]:
         """Ottiene i topic più rilevanti/confidenti dell'agente"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -777,6 +963,7 @@ class MemorySystem:
             rows = [dict(r) for r in cursor.fetchall()]
             conn.close()
             return rows
+
         rows = await self._run(_sync)
         for data in rows:
             if data.get("key_points"):
@@ -790,6 +977,7 @@ class MemorySystem:
     async def create_sprint(self, project_id: str, sprint_number: int = 1) -> int:
         """Crea un nuovo sprint nel database"""
         started_at = datetime.now().isoformat()
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -801,10 +989,12 @@ class MemorySystem:
             conn.commit()
             conn.close()
             return sprint_id
+
         return await self._run(_sync)
 
     async def get_active_sprint(self, project_id: str) -> Optional[Dict]:
         """Ottiene l'attuale sprint attivo"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -816,11 +1006,13 @@ class MemorySystem:
             row = cursor.fetchone()
             conn.close()
             return dict(row) if row else None
+
         return await self._run(_sync)
 
     async def complete_sprint(self, sprint_id: int):
         """Marca uno sprint come completato"""
         completed_at = datetime.now().isoformat()
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -830,10 +1022,14 @@ class MemorySystem:
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
-    async def save_retrospective_feedback(self, sprint_id: int, agent_type: str, feedback: str, sentiment: str = "neutral"):
+    async def save_retrospective_feedback(
+        self, sprint_id: int, agent_type: str, feedback: str, sentiment: str = "neutral"
+    ):
         """Salva il feedback di un agente per una retrospective"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -843,10 +1039,12 @@ class MemorySystem:
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
     async def get_sprint_retrospective(self, sprint_id: int) -> List[Dict]:
         """Ottiene tutti i feedback per uno specifico sprint"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -858,10 +1056,12 @@ class MemorySystem:
             rows = [dict(r) for r in cursor.fetchall()]
             conn.close()
             return rows
+
         return await self._run(_sync)
 
     async def get_retrospectives(self, project_id: Optional[str] = None) -> List[Dict]:
         """Ottiene la cronologia delle retrospective con statistiche sui task"""
+
         def _get_sprints():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -889,13 +1089,23 @@ class MemorySystem:
                 cursor.execute(
                     """SELECT SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) as completed,
                         SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) as failed
-                        FROM tasks WHERE project_id=? AND completed_at>=? AND completed_at<=?
+                        FROM tasks WHERE project_id=? 
+                        AND (completed_at BETWEEN ? AND ? OR completed_at >= ?)
                         AND type NOT IN ('create_project','evolve_project','review_task','speaking_commit','scrum_improvement','backlog_item')""",
-                    (sp["project_id"], sp["started_at"], sp["completed_at"]),
+                    (
+                        sp["project_id"],
+                        sp["started_at"],
+                        sp["completed_at"],
+                        sp["started_at"],
+                    ),
                 )
                 row = cursor.fetchone()
                 conn.close()
-                return {"completed_tasks": row[0] or 0, "failed_tasks": row[1] or 0, "total_tasks": (row[0] or 0) + (row[1] or 0)}
+                return {
+                    "completed_tasks": row[0] or 0,
+                    "failed_tasks": row[1] or 0,
+                    "total_tasks": (row[0] or 0) + (row[1] or 0),
+                }
 
             stats = await self._run(_stats)
             result.append({"sprint": sprint, "feedbacks": fbs, "stats": stats})
@@ -905,6 +1115,7 @@ class MemorySystem:
 
     async def increment_sprint_counter(self, project_id: str) -> int:
         """Incrementa il contatore degli sprint completati e restituisce il totale"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -913,30 +1124,44 @@ class MemorySystem:
                 (project_id,),
             )
             conn.commit()
-            cursor.execute("SELECT total_sprints_completed FROM sprint_counters WHERE project_id = ?", (project_id,))
+            cursor.execute(
+                "SELECT total_sprints_completed FROM sprint_counters WHERE project_id = ?",
+                (project_id,),
+            )
             total = cursor.fetchone()[0]
             conn.close()
             return total
+
         return await self._run(_sync)
 
     async def get_sprint_counter(self, project_id: str) -> Dict:
         """Restituisce il contatore sprint del progetto"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM sprint_counters WHERE project_id = ?", (project_id,))
+            cursor.execute(
+                "SELECT * FROM sprint_counters WHERE project_id = ?", (project_id,)
+            )
             row = cursor.fetchone()
             conn.close()
             return dict(row) if row else None
+
         raw = await self._run(_sync)
-        return raw or {"project_id": project_id, "total_sprints_completed": 0, "current_release_sprint_start": 1}
+        return raw or {
+            "project_id": project_id,
+            "total_sprints_completed": 0,
+            "current_release_sprint_start": 1,
+        }
 
     # --- RELEASE METHODS ---
 
-
-    async def create_release(self, project_id, version, sprint_start, sprint_end, summary) -> int:
+    async def create_release(
+        self, project_id, version, sprint_start, sprint_end, summary
+    ) -> int:
         """Salva una nuova Release"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -952,24 +1177,33 @@ class MemorySystem:
             conn.commit()
             conn.close()
             return release_id
+
         return await self._run(_sync)
 
     async def get_releases(self, project_id: str) -> List[Dict]:
         """Recupera tutte le release di un progetto"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM releases WHERE project_id = ? ORDER BY created_at DESC", (project_id,))
+            cursor.execute(
+                "SELECT * FROM releases WHERE project_id = ? ORDER BY created_at DESC",
+                (project_id,),
+            )
             rows = [dict(r) for r in cursor.fetchall()]
             conn.close()
             return rows
+
         return await self._run(_sync)
 
     # --- BACKLOG REFINEMENT METHODS ---
 
-    async def save_refinement_proposal(self, project_id, sprint_id, proposed_by, description, priority=1) -> int:
+    async def save_refinement_proposal(
+        self, project_id, sprint_id, proposed_by, description, priority=1
+    ) -> int:
         """Salva una proposta di refinement da un agente"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -981,10 +1215,14 @@ class MemorySystem:
             conn.commit()
             conn.close()
             return item_id
+
         return await self._run(_sync)
 
-    async def get_refinement_proposals(self, project_id: str, sprint_id: int = None) -> List[Dict]:
+    async def get_refinement_proposals(
+        self, project_id: str, sprint_id: int = None
+    ) -> List[Dict]:
         """Recupera le proposte di refinement"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             conn.row_factory = sqlite3.Row
@@ -1002,10 +1240,12 @@ class MemorySystem:
             rows = [dict(r) for r in cursor.fetchall()]
             conn.close()
             return rows
+
         return await self._run(_sync)
 
     async def accept_refinement_proposals(self, project_id: str, sprint_id: int):
         """Marca le proposte di questo sprint come accepted"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -1015,12 +1255,14 @@ class MemorySystem:
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
     # --- CONFIG METHODS ---
 
     async def get_config(self, key: str) -> Optional[str]:
         """Legge un valore dalla tabella config"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -1028,10 +1270,12 @@ class MemorySystem:
             row = cursor.fetchone()
             conn.close()
             return row[0] if row else None
+
         return await self._run(_sync)
 
     async def set_config(self, key: str, value: str):
         """Scrive o aggiorna un valore nella tabella config"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -1041,10 +1285,12 @@ class MemorySystem:
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)
 
     async def clear_agent_prompts(self):
         """Cancella tutti i prompt agenti dal DB e resetta la versione prompt"""
+
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
@@ -1052,6 +1298,7 @@ class MemorySystem:
             cursor.execute("DELETE FROM config WHERE key = 'prompt_version'")
             conn.commit()
             conn.close()
+
         await self._run(_sync)
         logger.info("✓ Tutti i prompt agenti eliminati dal DB")
 
@@ -1085,4 +1332,5 @@ class MemorySystem:
             )
             conn.commit()
             conn.close()
+
         await self._run(_sync)

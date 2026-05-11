@@ -169,8 +169,18 @@ class ScrumMasterAgent(BaseAgent):
         )
 
         if self.sprint_task_count >= TASKS_BEFORE_RETRO and not self._is_ending_sprint:
-            # Crea un task per non bloccare l'event loop e non perdere task complessi
-            asyncio.create_task(self._safe_end_sprint())
+            asyncio.create_task(self._process_sprint_backlog())
+
+    async def _process_sprint_backlog(self):
+        """Smaltisce i task accumulati finché il conteggio scende sotto la soglia"""
+        if self._is_ending_sprint:
+            return
+        
+        while self.sprint_task_count >= TASKS_BEFORE_RETRO:
+            logger.info(f"🔄 Smaltimento backlog sprint: {self.sprint_task_count} task rimanenti...")
+            await self._safe_end_sprint()
+            # Un breve sleep per permettere il completamento della retro (ora 15s)
+            await asyncio.sleep(17) 
 
     async def _safe_end_sprint(self):
         if self._is_ending_sprint:
