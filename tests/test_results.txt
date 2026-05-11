@@ -1,0 +1,77 @@
+============================= test session starts ==============================
+platform linux -- Python 3.10.16, pytest-9.0.2, pluggy-1.5.0 -- /home/albus/.pyenv/versions/3.10.16/bin/python
+cachedir: .pytest_cache
+rootdir: /home/albus/workspaces/hypnonyx
+plugins: anyio-4.13.0, asyncio-1.3.0, hydra-core-1.3.2, cov-7.1.0
+asyncio: mode=strict, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 10 items
+
+tests/test_base_agent.py::test_base_agent_init PASSED                    [ 10%]
+tests/test_base_agent.py::test_base_agent_start_stop PASSED              [ 20%]
+tests/test_base_agent.py::test_handle_new_task PASSED                    [ 30%]
+tests/test_base_agent.py::test_handle_scrum_ceremony FAILED              [ 40%]
+tests/test_base_agent.py::test_task_worker_success PASSED                [ 50%]
+tests/test_base_agent.py::test_task_worker_failure PASSED                [ 60%]
+tests/test_base_agent.py::test_perform_research PASSED                   [ 70%]
+tests/test_base_agent.py::test_synthesize_and_store_knowledge PASSED     [ 80%]
+tests/test_base_agent.py::test_heartbeat_and_idle FAILED                 [ 90%]
+tests/test_base_agent.py::test_normalize_files PASSED                    [100%]
+
+=================================== FAILURES ===================================
+__________________________ test_handle_scrum_ceremony __________________________
+
+mock_memory = <MagicMock id='130175800413200'>
+mock_broker = <NonCallableMagicMock name='MessageBroker()' spec='MessageBroker' id='130175800847680'>
+
+    @pytest.mark.asyncio
+    async def test_handle_scrum_ceremony(mock_memory, mock_broker):
+        with patch("core.llm_client.LLMClient", autospec=True) as mock_llm:
+            agent = MockAgent("a1", "backend", mock_memory, "/tmp/project")
+            agent.completed_tasks = ["t1"]
+    
+            mock_llm_instance = agent.llm_client
+            mock_llm_instance.generate_structured = AsyncMock(return_value={"feedback": "Good", "sentiment": "positive"})
+    
+            msg = {"type": "retrospective_request", "sprint_id": 1}
+            await agent._handle_scrum_ceremony(msg)
+    
+            assert mock_broker.publish.called
+            args = mock_broker.publish.call_args
+>           assert args[1]["sprint_id"] == 1
+E           KeyError: 'sprint_id'
+
+tests/test_base_agent.py:107: KeyError
+___________________________ test_heartbeat_and_idle ____________________________
+
+mock_memory = <MagicMock id='130175798091712'>
+mock_broker = <NonCallableMagicMock name='MessageBroker()' spec='MessageBroker' id='130175799952288'>
+
+    @pytest.mark.asyncio
+    async def test_heartbeat_and_idle(mock_memory, mock_broker):
+        with patch("core.llm_client.LLMClient", autospec=True):
+            agent = MockAgent("a1", "backend", mock_memory, "/tmp/project")
+            agent.running = True
+    
+            # Mock intervals
+            with patch("agents.base_agent.HEARTBEAT_INTERVAL", 0.1), \
+                 patch("agents.base_agent.MAX_IDLE_TIME", 0.1):
+    
+                hb_task = asyncio.create_task(agent._heartbeat_worker())
+                idle_task = asyncio.create_task(agent._idle_checker())
+    
+                await asyncio.sleep(0.3)
+                agent.running = False
+                await hb_task
+                await idle_task
+    
+                assert mock_broker.send_heartbeat.called
+>               assert mock_broker.report_idle.called
+E               AssertionError: assert False
+E                +  where False = <AsyncMock name='MessageBroker().report_idle' id='130175797942576'>.called
+E                +    where <AsyncMock name='MessageBroker().report_idle' id='130175797942576'> = <NonCallableMagicMock name='MessageBroker()' spec='MessageBroker' id='130175799952288'>.report_idle
+
+tests/test_base_agent.py:204: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_base_agent.py::test_handle_scrum_ceremony - KeyError: 'spri...
+FAILED tests/test_base_agent.py::test_heartbeat_and_idle - AssertionError: as...
+========================= 2 failed, 8 passed in 12.66s =========================

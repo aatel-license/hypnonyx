@@ -9,7 +9,6 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 import yaml
-import json
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class SkillManager:
 
     def initialize(self, workspace_root: Optional[Path] = None):
         """Inizializza il sistema di skills cercando in percorsi globali e locali
-        
+
         Ordine di priorità (primo trovato vince):
         1. Percorsi passati al costruttore (es. SKILLS_DIR configurata)
         2. $HOME/.claude
@@ -167,7 +166,7 @@ class SkillManager:
         """Crea una nuova skill"""
         if not self.skills_dirs:
             raise ValueError("Nessun directory di skills configurato.")
-            
+
         base_dir = self.skills_dirs[0]
         skill_dir = base_dir / skill_name
         skill_dir.mkdir(exist_ok=True, parents=True)
@@ -231,7 +230,7 @@ class SkillManager:
 
     def set_agent_skill_mapping(self, mapping: Dict[str, List[str]]):
         """Imposta la mappa delle skill specifiche per agente da env
-        
+
         mapping: { agent_type: [skill1, skill2, ...] }
         """
         self._agent_skill_mapping = mapping
@@ -242,36 +241,34 @@ class SkillManager:
 
     def get_agent_skills(self, agent_type: str) -> List[str]:
         """Ottiene le skill specifiche per agente (da env AGENT_SKILL_<TYPE>)
-        
+
         Ritorna una lista di nomi skill.
-        
+
         Priorità:
         1. Skill esplicita nel task (gestita da _task_worker)
         2. Skill specifica per agente configurata in env
         3. Nessuna → ritorna []
         """
-        agent_mapping = getattr(self, '_agent_skill_mapping', {}) or {}
+        agent_mapping = getattr(self, "_agent_skill_mapping", {}) or {}
         skills = agent_mapping.get(agent_type, [])
         return skills if isinstance(skills, list) else [skills]
 
     def get_common_skills_for_agent(self, agent_type: str) -> List[str]:
         """Ottiene le skills comuni a tutti gli agenti (da env COMMON_SKILLS_ALL_AGENTS)
-        
+
         Ritorna la lista di nomi skill che ogni agente dovrebbe usare.
         """
-        common = getattr(self, '_common_skills', []) or []
+        common = getattr(self, "_common_skills", []) or []
         # Filtra solo quelle che esistono o sono valide
         return [s for s in common if s]
 
-    def resolve_all_skills_for_agent(
-        self, agent_type: str
-    ) -> List[str]:
+    def resolve_all_skills_for_agent(self, agent_type: str) -> List[str]:
         """Risolve TUTTE le skill per un agente:
-        
+
         1. Skill specifiche da AGENT_SKILL_<TYPE> (lista)
         2. Skills comuni da COMMON_SKILLS_ALL_AGENTS
         3. Fallback: trigger detection
-        
+
         Ritorna una lista di nomi skill (ordine di priorità).
         """
         result = []

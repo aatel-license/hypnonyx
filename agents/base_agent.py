@@ -104,16 +104,16 @@ class BaseAgent:
 
     async def _handle_new_task(self, message: Dict):
         """Handler per nuovi task"""
-        logger.info(
-            f"Agent {self.agent_id} ha ricevuto nuovo task: {message.get('task_id')} type={message.get('type')}"
-        )
-
         if not message or not isinstance(message, dict):
             logger.error(f"Agent {self.agent_id}: Received empty or non-dict message")
             return
 
         task_id = message.get("task_id")
         task_type = message.get("type")
+        logger.info(
+            f"Agent {self.agent_id} ha ricevuto nuovo task: {task_id} type={task_type}"
+        )
+
         agent_type = message.get("agent_type")
 
         if not task_id or not task_type:
