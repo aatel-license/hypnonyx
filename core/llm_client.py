@@ -334,47 +334,61 @@ Follow best practices and include error handling."""
         return await self.chat_completion(messages)
 
     async def extract_json(self, text: str) -> Optional[Dict]:
-        """Estrae JSON da una risposta testuale in modo robusto"""
+        """Estrae JSON da una risposta testuale in modo robusto (gestisce troncamenti e rumore)"""
         if not text:
             return None
 
+        # Pulisce rumore comune all'inizio/fine
+        text = text.strip()
+
         # 1. Prova parsing diretto dell'intero testo
         try:
-            return json.loads(text.strip())
+            return json.loads(text)
         except (json.JSONDecodeError, ValueError):
             pass
 
-        # 2. Cerca blocchi ```json ... ```
-        json_start_marker = "```json"
-        start_idx = text.find(json_start_marker)
-        if start_idx != -1:
-            content_start = start_idx + len(json_start_marker)
-            end_idx = text.find("```", content_start)
-            if end_idx != -1:
-                try:
-                    return json.loads(text[content_start:end_idx].strip())
-                except (json.JSONDecodeError, ValueError):
-                    pass
+        # 2. Cerca blocchi ```json ... ``` o ``` ... ```
+        for marker in ["```json", "```"]:
+            start_idx = text.find(marker)
+            if start_idx != -1:
+                content_start = start_idx + len(marker)
+                end_idx = text.find("```", content_start)
+                if end_idx != -1:
+                    json_str = text[content_start:end_idx].strip()
+                    try:
+                        return json.loads(json_str)
+                    except:
+                        # Se fallisce, tenta pulizia virgole finali
+                        json_str = re.sub(r",\s*([\]}])", r"\1", json_str)
+                        try:
+                            return json.loads(json_str)
+                        except:
+                            pass
 
-        # 3. Cerca blocchi ``` ... ``` (senza json)
-        start_idx = text.find("```")
-        if start_idx != -1:
-            content_start = start_idx + 3
-            end_idx = text.find("```", content_start)
-            if end_idx != -1:
+        # 3. Cerca l'intervallo tra il primo { e l'ultimo }
+        start_idx = text.find("{")
+        end_idx = text.rfind("}")
+        if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+            json_str = text[start_idx : end_idx + 1]
+            try:
+                return json.loads(json_str)
+            except (json.JSONDecodeError, ValueError):
+                # Tenta riparazione estrema: rimuove trailing commas
                 try:
-                    return json.loads(text[content_start:end_idx].strip())
-                except (json.JSONDecodeError, ValueError):
-                    pass
-
-        # 4. Cerca l'ultimo { e il primo }
-        try:
-            start_idx = text.find("{")
-            end_idx = text.rfind("}")
-            if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-                return json.loads(text[start_idx : end_idx + 1])
-        except (json.JSONDecodeError, ValueError):
-            pass
+                    json_str = re.sub(r",\s*([\]}])", r"\1", json_str)
+                    return json.loads(json_str)
+                except:
+                    # Se ancora fallisce, potrebbe essere troncato.
+                    # Tentiamo di chiudere eventuali parentesi aperte
+                    try:
+                        temp_json = json_str
+                        open_braces = temp_json.count("{") - temp_json.count("}")
+                        open_brackets = temp_json.count("[") - temp_json.count("]")
+                        if open_braces > 0: temp_json += "}" * open_braces
+                        if open_brackets > 0: temp_json += "]" * open_brackets
+                        return json.loads(temp_json)
+                    except:
+                        pass
 
         return None
 
