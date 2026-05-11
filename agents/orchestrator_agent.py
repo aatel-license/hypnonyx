@@ -55,10 +55,11 @@ class OrchestratorAgent(BaseAgent):
         # NOTE: _subscribe_to_orchestrator_topics viene chiamato in start()
         # per garantire che l'event loop sia attivo (non in __init__)
 
-    async def start(self):
-        """Avvia l'agente e avvia le sottoscrizioni orchestratore."""
-        await super().start()
-        asyncio.create_task(self._subscribe_to_orchestrator_topics())
+    async def _setup_agent(self):
+        """Inizializza l'agente e le sottoscrizioni orchestratore."""
+        await super()._setup_agent()
+        await self._subscribe_to_orchestrator_topics()
+
 
     # ─────────────────────────────────────────────────────────────────────────
     # Helpers

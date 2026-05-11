@@ -49,14 +49,21 @@ class UniversalAgent(BaseAgent):
 
         # 1. Fetch Persona and Task Template from PromptManager
         prompt_config = await self.prompt_manager.get_prompt(self.agent_type, task_type)
+        
+        # Fallback 1: Try generic for this agent type
+        if not prompt_config and task_type != "generic":
+            prompt_config = await self.prompt_manager.get_prompt(self.agent_type, "generic")
+            
+        # Fallback 2: Hardcoded generic
         if not prompt_config:
             logger.warning(
-                f"No prompt configuration found for {self.agent_type}:{task_type}"
+                f"No prompt configuration found for {self.agent_type}:{task_type}. Using hardcoded fallback."
             )
-            return {
-                "status": "failed",
-                "error": f"No prompt configured for {self.agent_type}:{task_type}",
+            prompt_config = {
+                "system_prompt": f"You are a expert {self.agent_type} developer.",
+                "template": "Analyze the task and provide the necessary implementation or analysis.\nTask: {description}"
             }
+
 
         system_prompt = prompt_config.get(
             "system_prompt", f"You are a expert {self.agent_type} developer."

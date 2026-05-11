@@ -35,10 +35,9 @@ class ScrumMasterAgent(BaseAgent):
         self._is_ending_sprint: bool = False
         self.initial_retrospective: bool = False
 
-    async def start(self):
-        """Avvio dell'agente con sottoscrizioni"""
-        self.running = True
-        await self.broker.connect()
+    async def _setup_agent(self):
+        """Configura le sottoscrizioni specifiche del Scrum Master."""
+        await super()._setup_agent()
 
         # Custom Scrum Master Subscriptions
         await self.broker.subscribe(
@@ -52,26 +51,8 @@ class ScrumMasterAgent(BaseAgent):
             self._on_refinement_proposal,
         )
 
-        # Base Agent Subscriptions
-        await self.broker.subscribe(
-            get_topics(self.project_id)["TASKS_NEW"], self._handle_new_task
-        )
-        await self.broker.subscribe(
-            get_topics(self.project_id)["TASKS_ASSIGNED"], self._handle_assigned_task
-        )
-        await self.broker.subscribe(
-            get_topics(self.project_id)["HELP_REQUEST"], self._handle_help_request
-        )
-        await self.broker.subscribe(
-            get_topics(self.project_id)["BUGS_REPORTED"], self._handle_bug_report
-        )
-        await self.broker.subscribe(
-            get_topics(self.project_id)["SCRUM_CEREMONY"], self._handle_scrum_ceremony
-        )
-        await self.broker.subscribe(
-            get_topics(self.project_id)["BACKLOG_REFINEMENT"],
-            self._handle_backlog_refinement,
-        )
+        # BaseAgent handles TASKS_NEW, TASKS_ASSIGNED, HELP_REQUEST, BUGS_REPORTED, SCRUM_CEREMONY, BACKLOG_REFINEMENT
+
 
         active_sprint = await self.memory.get_active_sprint(self.project_id)
         if active_sprint:
@@ -85,8 +66,6 @@ class ScrumMasterAgent(BaseAgent):
         else:
             await self._start_new_sprint()
 
-        tasks = [self._heartbeat_worker(), self._task_worker(), self._idle_checker()]
-
         if self.initial_retrospective and self.active_sprint_id:
             logger.info(
                 f"⚡ Progetto avviato con --resume. Lancio Retrospective immediata per lo Sprint {self.active_sprint_id}..."
@@ -96,7 +75,6 @@ class ScrumMasterAgent(BaseAgent):
                 self._trigger_retrospective_with_delay(self.active_sprint_id, delay=10)
             )
 
-        await asyncio.gather(*tasks, return_exceptions=True)
 
     async def _trigger_retrospective_with_delay(self, sprint_id: int, delay: int = 10):
         """Attende un breve ritardo prima di lanciare la retrospective (utile per il resume)"""

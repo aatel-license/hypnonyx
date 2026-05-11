@@ -75,8 +75,22 @@ class BaseAgent:
         logger.info(f"Inizializzato {agent_type} agent: {agent_id}")
 
     async def start(self):
-        """Avvia l'agent"""
+        """Avvia l'agente e attende che finisca."""
         self.running = True
+        await self._setup_agent()
+        
+        # Avvia i worker in background
+        self._worker_tasks = [
+            asyncio.create_task(self._task_worker()),
+            asyncio.create_task(self._heartbeat_worker()),
+            asyncio.create_task(self._idle_checker())
+        ]
+        
+        # Attende i worker (blocca finché running è True)
+        await asyncio.gather(*self._worker_tasks, return_exceptions=True)
+
+    async def _setup_agent(self):
+        """Inizializzazione (connessione e sottoscrizioni). Sovrascrivibile."""
         await self.broker.connect()
 
         await self.broker.subscribe(
@@ -98,10 +112,6 @@ class BaseAgent:
             get_topics(self.project_id)["BACKLOG_REFINEMENT"],
             self._handle_backlog_refinement,
         )
-
-        asyncio.create_task(self._task_worker())
-        asyncio.create_task(self._heartbeat_worker())
-        asyncio.create_task(self._idle_checker())
 
     def _ensure_metadata_dict(self, task: Dict):
         """Assicura che task['metadata'] sia un dizionario deserializzato."""
@@ -565,7 +575,13 @@ Respond ONLY with a JSON array:
                             isinstance(result, dict)
                             and result.get("status") == "failed"
                         ):
-                            reason = result.get("reason", "Unknown failure")
+                            reason = (
+                                result.get("reason")
+                                or result.get("error")
+                                or result.get("feedback")
+                                or result.get("message")
+                                or "Unknown failure"
+                            )
                             logger.error(
                                 f"Task {task_id} FAILED during execution: {reason}"
                             )
