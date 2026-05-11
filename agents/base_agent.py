@@ -354,21 +354,27 @@ Output ONLY the query string, no explanations."""
         if research_context:
             research_section = f"\nWeb research findings:\n{research_context[:1500]}\n"
 
-        prompt = f"""As a {self.agent_type} agent, propose 2-3 concrete backlog items for the next sprint.
+        prompt = f"""As a {self.agent_type} agent, analyze the current project state and propose 2-3 backlog improvements.
+        
+Current pending backlog items:
+{pending_summary[:600]}
 
 Your recent work:
 - Completed: {json.dumps(recent_work["completed"])}
 - Failed/Rejected: {json.dumps(recent_work["failed"])}
 
-Current pending backlog context:
-{pending_summary[:400]}
 {research_section}
+
+TASK FOR YOU:
+1. REVIEW the "Current pending backlog items". If any items are too vague, large, or missing technical details for your role, propose a REFINEMENT (a more detailed version or a breakdown).
+2. PROPOSE new technical tasks needed to advance the project based on your recent work and research.
+
 Respond ONLY with a JSON array:
-[{{"description": "...", "priority": 1-3, "rationale": "why this is important"}}]"""
+[{{"description": "...", "priority": 1-3, "rationale": "why this refinement or new task is needed"}}]"""
 
         try:
             proposals = await self.llm_client.generate_structured(
-                system_prompt=f"You are a senior {self.agent_type} developer proposing data-driven backlog improvements.",
+                system_prompt=f"You are a senior {self.agent_type} developer. Your goal is to keep the backlog refined, granular, and technically sound.",
                 prompt=prompt,
             )
 

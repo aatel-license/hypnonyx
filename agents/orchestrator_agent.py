@@ -115,6 +115,18 @@ class OrchestratorAgent(BaseAgent):
         elif metadata is None:
             task["metadata"] = {}
 
+    async def _handle_external_task_created(self, message: Dict):
+        """Handler per task creati esternamente (es. dal Scrum Master o UI)"""
+        if message.get("project_id") != self.project_id:
+            return
+
+        task_id = message.get("task_id")
+        if task_id and task_id not in self.all_tasks:
+            logger.info(f"📩 Adottato nuovo task esterno rilevato via broker: {task_id}")
+            self.all_tasks[task_id] = message
+            if task_id not in self.task_dependencies:
+                self.task_dependencies[task_id] = message.get("depends_on", [])
+
     # ─────────────────────────────────────────────────────────────────────────
     # Subscriptions
     # ─────────────────────────────────────────────────────────────────────────
@@ -135,6 +147,9 @@ class OrchestratorAgent(BaseAgent):
         )
         await self.broker.subscribe(
             get_topics(self.project_id)["AGENT_IDLE"], self._handle_agent_idle
+        )
+        await self.broker.subscribe(
+            get_topics(self.project_id)["TASKS_NEW"], self._handle_external_task_created
         )
 
     # ─────────────────────────────────────────────────────────────────────────
@@ -943,7 +958,11 @@ tasks[0]{task_id,type,agent_type,description,priority,depends_on,metadata}:
         result = message.get("result", {})
 
         if task_id not in self.all_tasks:
-            return
+            logger.info(f"❓ Ricevuto completamento per task sconosciuto {task_id}. Provo sync...")
+            await self._sync_external_tasks()
+            if task_id not in self.all_tasks:
+                logger.warning(f"⚠️ Task {task_id} ancora sconosciuto dopo sync. Ignoro.")
+                return
 
         task_obj = self.all_tasks[task_id]
         self._ensure_metadata_dict(task_obj)
@@ -1126,6 +1145,9 @@ tasks[0]{task_id,type,agent_type,description,priority,depends_on,metadata}:
 
             tdata["metadata"]["published"] = True
             tdata["assigned_at"] = time.time()
+
+            # FIX: Persisti il flag 'published' nel DB per evitare che _sync_external_tasks lo resetti
+            await self.memory.update_task_metadata(tid, tdata["metadata"])
 
             await self.broker.publish(get_topics(self.project_id)["TASKS_NEW"], tdata)
             published_count += 1

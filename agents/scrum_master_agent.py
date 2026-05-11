@@ -427,27 +427,28 @@ Feedbacks:
         # FIX: Pulisce proposte precedenti per evitare accumuli/leak di altri sprint
         self.refinement_proposals = []
 
-        logger.info(f"🗂️ Avvio Backlog Refinement per lo Sprint {sprint_id}...")
+        logger.info(f"📢 [CERIMONIA] Avvio Backlog Refinement per lo Sprint {sprint_id}...")
         pending_tasks = await self.memory.get_pending_tasks(self.project_id)
+        failed_tasks = [t for t in pending_tasks if t.get("status") == "failed"]
         pending_summary = "\n".join(
             f"- [{t.get('agent_type')}] {t.get('description', '')[:80]}"
             for t in pending_tasks[:10]
         )
+        failed_info = [f"ID: {t.get('task_id')}, Desc: {t.get('description')}" for t in failed_tasks]
 
         await self.broker.publish(
             get_topics(self.project_id)["BACKLOG_REFINEMENT"],
             {
                 "type": "backlog_refinement_request",
-                "sprint_id": sprint_id,
                 "project_id": self.project_id,
+                "sprint_id": sprint_id,
                 "pending_tasks_summary": pending_summary,
+                "failed_tasks": failed_info,
                 "timestamp": time.time(),
             },
         )
-        logger.info(
-            f"⏳ Attesa 15s per raccogliere proposte Backlog Refinement (Sprint {sprint_id})..."
-        )
-        await asyncio.sleep(15)
+        logger.info("⏳ In attesa di proposte dagli agenti (30s)...")
+        await asyncio.sleep(30)
         await self._finalize_backlog_refinement(sprint_id)
 
     async def _on_refinement_proposal(self, message: Dict):
@@ -456,6 +457,7 @@ Feedbacks:
             return
         agent_type = message.get("agent_type")
         proposals = message.get("proposals", [])
+        logger.info(f"📥 Ricevute {len(proposals)} proposte di refinement da agent {agent_type}")
         for p in proposals[:5]:  # aumentato da 3 a 5 per agente
             desc = p.get("description", "") if isinstance(p, dict) else str(p)
             if desc:
@@ -471,6 +473,9 @@ Feedbacks:
     async def _finalize_backlog_refinement(self, sprint_id: int):
         """Sintetizza proposte con output TOON"""
         if not self.refinement_proposals:
+            logger.warning(
+                f"ℹ️ Nessuna proposta ricevuta per il refinement dello Sprint {sprint_id}. Salto cerimonia."
+            )
             return
 
         # Filtriamo le proposte per questo sprint specifico, o le usiamo tutte
