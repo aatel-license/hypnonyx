@@ -392,6 +392,11 @@ class MemorySystem:
                     task["metadata"] = json.loads(task["metadata"])
                 except Exception:
                     task["metadata"] = {}
+            if task.get("depends_on"):
+                try:
+                    task["depends_on"] = json.loads(task["depends_on"])
+                except Exception:
+                    task["depends_on"] = []
             return task
         return None
 

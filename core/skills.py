@@ -7,7 +7,7 @@ Permette agli agenti di caricare e utilizzare skills dalla directory .claude/
 import os
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 import yaml
 import json
 
@@ -17,7 +17,9 @@ logger = logging.getLogger(__name__)
 class SkillManager:
     """Gestisce il caricamento e l'utilizzo di skills dinamiche da percorsi multipli"""
 
-    def __init__(self, skills_dirs: Optional[List[str]] = None):
+    def __init__(self, skills_dirs: Optional[Union[str, List[str]]] = None):
+        if isinstance(skills_dirs, str):
+            skills_dirs = [skills_dirs]
         # Salva i percorsi originali (priorità massima)
         self._skills_dirs: List[Path] = (
             [Path(d) for d in skills_dirs] if skills_dirs else []
@@ -163,7 +165,11 @@ class SkillManager:
         self, skill_name: str, content: str, metadata: Optional[Dict] = None
     ):
         """Crea una nuova skill"""
-        skill_dir = self.skills_dir / skill_name
+        if not self.skills_dirs:
+            raise ValueError("Nessun directory di skills configurato.")
+            
+        base_dir = self.skills_dirs[0]
+        skill_dir = base_dir / skill_name
         skill_dir.mkdir(exist_ok=True, parents=True)
 
         skill_file = skill_dir / "SKILL.md"
@@ -350,7 +356,7 @@ Please follow the guidelines in the skill_context while completing the task.
 
 def create_default_skills(skills_dir: Path):
     """Crea alcune skills di default"""
-    manager = SkillManager(str(skills_dir))
+    manager = SkillManager([str(skills_dir)])
 
     # Skill per backend API
     manager.create_skill(
