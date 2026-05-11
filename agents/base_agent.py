@@ -568,7 +568,7 @@ Respond ONLY with a JSON array:
                         # FIX: rimuovi da pending solo a completamento
                         self.pending_task_ids.discard(task_id)
 
-                        logger.info(f"✅ Task {task_id} completato con successo al tentativo {attempts}.")
+                        logger.info(f"✅ Task {task_id} completato con successo al tentativo {attempts}. Invio TASKS_COMPLETED...")
                         await self.broker.publish(
                             get_topics(self.project_id)["TASKS_COMPLETED"],
                             {
@@ -618,6 +618,7 @@ Respond ONLY with a JSON array:
                             # FIX: rimuovi da pending a fallimento definitivo
                             self.pending_task_ids.discard(task_id)
 
+                            logger.error(f"❌ Task {task_id} FALLITO definitivamente dopo {attempts} tentativi. Invio TASKS_FAILED...")
                             await self.broker.publish(
                                 get_topics(self.project_id)["TASKS_FAILED"],
                                 {

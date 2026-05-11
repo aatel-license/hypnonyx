@@ -1624,12 +1624,22 @@ tasks[0]{task_id,type,agent_type,description,priority,depends_on,metadata}:
                         f"agent {agent_id} reports idle but task {tid} is in_progress"
                     )
 
-            assigned_at = tdata.get("assigned_at", 0)
+            assigned_at = tdata.get("assigned_at") or 0.0
+            if not isinstance(assigned_at, (int, float)):
+                assigned_at = 0.0
 
             # Timeout differenziato per tipo task
             task_type = tdata.get("type", "")
             min_grace = 300 if task_type in self._LONG_RUNNING_TYPES else 120
-            if now - assigned_at < min_grace:
+            
+            # Se l'agente dice esplicitamente di essere idle, bypassiamo il grace period
+            is_explicit_idle = (
+                agent_status 
+                and agent_status.get("status") == "idle" 
+                and status == "in_progress"
+            )
+
+            if not is_explicit_idle and (now - assigned_at < min_grace):
                 continue
 
             if reclaim:
