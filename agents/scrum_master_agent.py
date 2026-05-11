@@ -111,24 +111,28 @@ class ScrumMasterAgent(BaseAgent):
         return counter.get("total_sprints_completed", 0) + 1
 
     async def _get_completed_tasks_count_since(self, started_at: str) -> int:
-        """Query DB to count tasks completed during the active sprint"""
+        """Query DB to count tasks completed during the active sprint in a non-blocking way"""
         import sqlite3
+        import asyncio
 
-        conn = sqlite3.connect(self.memory.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            SELECT COUNT(*) FROM tasks 
-            WHERE project_id = ? 
-            AND status = 'completed'
-            AND type NOT IN ('create_project', 'evolve_project', 'review_task', 'speaking_commit', 'scrum_improvement', 'backlog_item')
-            AND completed_at >= ?
-        """,
-            (self.project_id, started_at),
-        )
-        count = cursor.fetchone()[0]
-        conn.close()
-        return count
+        def _sync():
+            conn = sqlite3.connect(self.memory.db_path)
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT COUNT(*) FROM tasks 
+                WHERE project_id = ? 
+                AND status = 'completed'
+                AND type NOT IN ('create_project', 'evolve_project', 'review_task', 'speaking_commit', 'scrum_improvement', 'backlog_item')
+                AND completed_at >= ?
+            """,
+                (self.project_id, started_at),
+            )
+            count = cursor.fetchone()[0]
+            conn.close()
+            return count
+
+        return await asyncio.to_thread(_sync)
 
     async def _start_new_sprint(self):
         """Inizia un nuovo ciclo di sprint"""

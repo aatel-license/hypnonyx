@@ -478,25 +478,6 @@ class MemorySystem:
             return count
         return (await self._run(_sync)) > 0
 
-    async def get_pending_tasks(self, project_id: str = None) -> List[Dict]:
-        """Ottieni task non completati (pending o failed)"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
-        if project_id:
-            cursor.execute(
-                """
-                SELECT * FROM tasks WHERE status IN ('pending', 'failed') AND project_id = ?
-                ORDER BY priority DESC, created_at ASC
-            """,
-                (project_id,),
-            )
-        else:
-            cursor.execute("""
-                SELECT * FROM tasks WHERE status IN ('pending', 'failed')
-                ORDER BY priority DESC, created_at ASC
-            """)
 
     async def get_pending_tasks(self, project_id: str = None) -> List[Dict]:
         """Ottieni task non completati (pending o failed)"""
@@ -953,40 +934,7 @@ class MemorySystem:
 
     # --- RELEASE METHODS ---
 
-    async def create_release(
-        self,
-        project_id: str,
-        version: str,
-        sprint_start: int,
-        sprint_end: int,
-        summary: str,
-    ) -> int:
-        """Salva una nuova Release e resetta il contatore di inizio sprint release"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO releases (project_id, version, sprint_start, sprint_end, summary)
-            VALUES (?, ?, ?, ?, ?)
-        """,
-            (project_id, version, sprint_start, sprint_end, summary),
-        )
-        release_id = cursor.lastrowid
-        # Reset sprint start per prossima release
-        cursor.execute(
-            """
-            UPDATE sprint_counters SET current_release_sprint_start = ?
-            WHERE project_id = ?
-        """,
-            (sprint_end + 1, project_id),
-        )
-        conn.commit()
-        conn.close()
-        return release_id
 
-    async def get_releases(self, project_id: str) -> List[Dict]:
-        """Recupera tutte le release di un progetto"""
-        conn = sqlite3.connect(self.db_path)
     async def create_release(self, project_id, version, sprint_start, sprint_end, summary) -> int:
         """Salva una nuova Release"""
         def _sync():

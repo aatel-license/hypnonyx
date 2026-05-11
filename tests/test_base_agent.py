@@ -110,18 +110,22 @@ async def test_handle_scrum_ceremony(mock_memory, mock_broker):
 
 @pytest.mark.asyncio
 async def test_task_worker_retry_logic(mock_memory, mock_broker):
+    original_sleep = asyncio.sleep
+    async def mock_sleep(delay):
+        await original_sleep(0.01)
+        
     with patch("core.llm_client.LLMClient", autospec=True):
         agent = MockAgent("a1", "backend", mock_memory, "/tmp/project")
         agent.execute = AsyncMock(side_effect=[Exception("fail"), {"status": "success"}])
         
         with patch("agents.base_agent.MAX_RETRIES", 2), \
-             patch("agents.base_agent.asyncio.sleep", new_callable=AsyncMock):
+             patch("agents.base_agent.asyncio.sleep", side_effect=mock_sleep):
             
             agent.running = True
             await agent.tasks_queue.put({"task_id": "t1", "type": "coding"})
             
             worker_task = asyncio.create_task(agent._task_worker())
-            await asyncio.sleep(0.2)
+            await original_sleep(0.2)
             
             agent.running = False
             await worker_task
