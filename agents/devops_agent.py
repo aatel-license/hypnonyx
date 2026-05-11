@@ -58,7 +58,7 @@ class DevOpsAgent(BaseAgent):
 
         logger.info(f"Generating startup script with LLM (TOON): {description}")
 
-        prompt = f"""Task: {description}
+        raw_prompt = f"""Task: {description}
 {template}
 {auto_fix_instruction}
 
@@ -70,6 +70,7 @@ The script should:
 5. Be robust and handle errors.
 
 Structure your response as an object with a 'files' key."""
+        prompt = self._inject_skill_context(raw_prompt)
 
         data = await self.llm_client.generate_structured(
             system_prompt=system_prompt, prompt=prompt
@@ -117,7 +118,7 @@ Structure your response as an object with a 'files' key."""
         system_prompt = prompt_config["system_prompt"]
         template = prompt_config["template"]
 
-        prompt = f"""
+        raw_prompt = f"""
 Original Task: {task_description}
 Files modified: {", ".join(files_modified)}
 
@@ -128,6 +129,7 @@ Context of changes:
 
 Structure your response as an object with a 'commit_message' key.
 """
+        prompt = self._inject_skill_context(raw_prompt)
 
         data = await self.llm_client.generate_structured(
             system_prompt=system_prompt, prompt=prompt
@@ -183,13 +185,13 @@ Structure your response as an object with a 'commit_message' key.
 
         logger.info(f"Generating Docker config with LLM (TOON): {description}")
 
-        prompt = f"""Task: {description}
+        raw_docker = f"""Task: {description}
 {template}
 {auto_fix_instruction}
 
-═══════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════
 🚨 CRITICAL RULES FOR DOCKER CONFIG 🚨
-═══════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════
 ❌ FORBIDDEN:
 - Comments like "configure this later"
 - Missing environment variables
@@ -201,10 +203,11 @@ Structure your response as an object with a 'commit_message' key.
 3. Health checks for all services
 4. Volume mounts
 5. docker-compose with all services
-═══════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════
 
 Generate Dockerfile for backend/ and a docker-compose.yml in root.
 Structure your response as an object with a 'files' key."""
+        prompt = self._inject_skill_context(raw_docker)
 
         data = await self.llm_client.generate_structured(
             system_prompt=system_prompt, prompt=prompt
@@ -234,12 +237,13 @@ Structure your response as an object with a 'files' key."""
 
         logger.info(f"Setting up CI/CD with LLM (TOON): {description}")
 
-        prompt = f"""Task: {description}
+        raw_ci = f"""Task: {description}
 {template}
 {auto_fix_instruction}
 Generate GitHub Actions workflow file in '.github/workflows/ci.yml'.
 
 Structure your response as an object with a 'files' key."""
+        prompt = self._inject_skill_context(raw_ci)
 
         data = await self.llm_client.generate_structured(
             system_prompt=system_prompt, prompt=prompt

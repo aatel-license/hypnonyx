@@ -102,13 +102,15 @@ Output ONLY the query string. Max 8 keywords."""
             enriched_results.append(res)
 
         system_prompt = "You are a senior technical researcher. Synthesize results into tech_stack.md."
-        prompt = f"""
+        
+        raw_prompt = f"""
 Task: {description}
 Context: {context_str}
 Search Results: {json.dumps(enriched_results)[:6000]}
 
 Generate a professional markdown report (tech_stack.md) including: recommended stack (honoring preferences), implementation guide (code snippets), resources, gotchas, and folder structure.
 """
+        prompt = self._inject_skill_context(raw_prompt)
 
         response = await self.llm_client.chat_completion(
             [

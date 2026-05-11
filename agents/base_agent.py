@@ -398,17 +398,48 @@ Respond ONLY with a JSON array:
                 logger.info(f"📝 Descrizione: {task.get('description', 'N/A')}")
 
                 self.current_skill_content = None
-                skill_loaded = False
+                self._resolved_skills: List[str] = []
+                
+                # RISOLUZIONE COMPLETA SKILL DA VARIABILI D'AMBIENTE
                 if self.skill_manager:
-                    skill_name = task.get("skill") or self._detect_skill(task)
+                    # 1. Skill esplicita nel task (priorità massima)
+                    explicit_skill = task.get("skill")
+                    if explicit_skill:
+                        skill_content = self.skill_manager.get_skill(explicit_skill)
+                        if skill_content:
+                            self.current_skill_content = skill_content
+                            self._resolved_skills = [explicit_skill]
+                            logger.info(f"✓ Skill esplicita '{explicit_skill}' caricata per task {task_id}")
+                    
+                    # 2. Risoluzione da env: AGENT_SKILL_* + COMMON_SKILLS_ALL_AGENTS
+                    agent_type = getattr(self, 'agent_type', 'universal')
+                    all_skills = self.skill_manager.resolve_all_skills_for_agent(agent_type)
+                    self._resolved_skills = [s for s in all_skills if s not in self._resolved_skills]
+                    
+                    # Inietta tutte le skill risolte nel contesto
+                    skill_contents = []
+                    for skill_name in self._resolved_skills:
+                        skill_content = self.skill_manager.get_skill(skill_name)
+                        if skill_content:
+                            skill_contents.append(f"### {skill_name}\n{skill_content}")
+                    
+                    if skill_contents:
+                        combined = "\n\n".join(skill_contents)
+                        self.current_skill_content = combined
+                        logger.info(f"✓ Skill per agente [{agent_type}]: {[self._resolved_skills, explicit_skill]})")
+                else:
+                    # 3. Fallback: trigger detection (vecchio comportamento)
+                    skill_name = self._detect_skill(task)
                     if skill_name:
                         skill_content = self.skill_manager.get_skill(skill_name)
                         if skill_content:
                             self.current_skill_content = skill_content
-                            skill_loaded = True
+                            self._resolved_skills = [skill_name]
+                            logger.info(f"✓ Skill auto-rilevata '{skill_name}' per task {task_id}")
 
-                if skill_loaded:
-                    logger.info(f"✓ Skill caricata per task {task_id}")
+                if self._resolved_skills:
+                    all_resolved = [explicit_skill] + [s for s in self._resolved_skills if s != explicit_skill] if explicit_skill else list(self._resolved_skills)
+                    logger.info(f"Skills risolte per task {task_id}: {all_resolved or ['nessuna']}")
 
                 self.current_task = task
                 self.last_activity = time.time()
@@ -975,6 +1006,30 @@ YOU MUST:
 
     async def execute(self, task: Dict) -> Dict[str, Any]:
         raise NotImplementedError("Subclasses must implement execute()")
+
+    def _inject_skill_context(self, prompt_text: str) -> str:
+        """Inietta il contesto delle skill nel prompt.
+        
+        Metodo helper per gli agenti figli: chiama questo metodo quando
+        vuoi che le skill risolte vengano iniettare automaticamente nel prompt.
+        
+        Args:
+            prompt_text: Il prompt originale senza skill
+            
+        Returns:
+            Prompt con <skill_guidelines> seziona aggiunta
+        """
+        if not hasattr(self, "current_skill_content") or not self.current_skill_content:
+            return prompt_text
+        
+        skill_context = f"""
+<skill_guidelines>
+{self.current_skill_content}
+</skill_guidelines>
+
+"""
+        # Inserisco PRIMA del prompt originale
+        return skill_context + prompt_text
 
     async def stop(self):
         self.running = False

@@ -56,7 +56,7 @@ class DatabaseAgent(BaseAgent):
 
         logger.info(f"Designing database schema with LLM (TOON): {description}")
 
-        prompt = f"""Task: {description}
+        raw_prompt = f"""Task: {description}
 {template}
 {auto_fix_instruction}
 
@@ -96,6 +96,7 @@ CREATE INDEX idx_users_email ON users(email);
 
 Generate a schema.sql file in 'database/'.
 Structure your response as an object with a 'files' key."""
+        prompt = self._inject_skill_context(raw_prompt)
 
         # Utilizza generazione strutturata (TOON priorità)
         data = await self.llm_client.generate_structured(
@@ -138,12 +139,13 @@ Structure your response as an object with a 'files' key."""
 
         logger.info(f"Creating migrations with LLM (TOON): {description}")
 
-        prompt = f"""Task: {description}
+        raw_prompt = f"""Task: {description}
 {template}
 {auto_fix_instruction}
 Generate a migration SQL file in 'database/migrations/001_initial_schema.sql' and a Python runner 'database/run_migrations.py'.
 
 Structure your response as an object with a 'files' key."""
+        prompt = self._inject_skill_context(raw_prompt)
 
         # Utilizza generazione strutturata (TOON priorità)
         data = await self.llm_client.generate_structured(

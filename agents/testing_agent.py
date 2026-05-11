@@ -52,14 +52,14 @@ class TestingAgent(BaseAgent):
             f"Generating unit tests with LLM for {target} (TOON): {description}"
         )
 
-        prompt = f"""Task: {description}
+        raw_prompt = f"""Task: {description}
 Target component: {target}
 {template}
 {auto_fix_instruction}
 
-═══════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════
 🚨 CRITICAL RULES FOR TESTS 🚨
-═══════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════
 ❌ FORBIDDEN:
 - Empty test functions
 - No assertions
@@ -69,10 +69,11 @@ Target component: {target}
 2. Proper assertions (assert/expect)
 3. Mock external dependencies
 4. Minimum 5 test cases per file
-═══════════════════════════════════════════════════════════════
+══════════════════════════════════════════════════════════════
 
 Generate unit and integration tests for the component.
 Structure your response as an object with a 'files' key."""
+        prompt = self._inject_skill_context(raw_prompt)
 
         # Utilizza generazione strutturata (TOON priorità)
         data = await self.llm_client.generate_structured(

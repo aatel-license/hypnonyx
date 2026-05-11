@@ -286,6 +286,34 @@ AGENT_LLM_MAPPING = {
     "universal": os.getenv("AGENT_UNIVERSAL_LLM", "default"),
 }
 
+# ============================================================
+# SKILLS CONFIGURATION
+# Per-agente skill (una sola skill principale per agente)
+# Formato: nome_skill o empty → nessuna skill specifica
+# ============================================================
+AGENT_SKILL_MAPPING = {
+    "backend": os.getenv("AGENT_SKILL_BACKEND", ""),
+    "frontend": os.getenv("AGENT_SKILL_FRONTEND", ""),
+    "architect": os.getenv("AGENT_SKILL_ARCHITECT", ""),
+    "database": os.getenv("AGENT_SKILL_DATABASE", ""),
+    "devops": os.getenv("AGENT_SKILL_DEVOPS", ""),
+    "qa": os.getenv("AGENT_SKILL_QA", ""),
+    "testing": os.getenv("AGENT_SKILL_TESTING", ""),
+    "scrum_master": os.getenv("AGENT_SKILL_SCRUM", ""),
+    "researcher": os.getenv("AGENT_SKILL_RESEARCHER", ""),
+    "reviewer": os.getenv("AGENT_SKILL_REVIEWER", ""),
+    "orchestrator": os.getenv("AGENT_SKILL_ORCHESTRATOR", ""),
+}
+
+# Skills comuni a tutti gli agenti (lista separata da virgola)
+_common_skills_raw = os.getenv(
+    "COMMON_SKILLS_ALL_AGENTS",
+    ""
+).strip().lower()
+COMMON_SKILLS_ALL_AGENTS = [
+    s.strip() for s in _common_skills_raw.split(",") if s.strip()
+] if _common_skills_raw else []
+
 # Situation-based mapping
 SITUATION_LLM_MAPPING = {
     "retrospective": os.getenv("SITUATION_RETRO_LLM", "lm_studio"),

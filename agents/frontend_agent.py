@@ -79,12 +79,21 @@ class FrontendAgent(BaseAgent):
         if metadata.get("mvp", False):
             mvp_instruction = "\n⚡ MVP MODE: Skip Auth views/logic, use MOCK data if backend is not ready, keep it thin. ⚡\n"
 
+        # Inietta le skill risolte nel prompt
+        skill_context = ""
+        if hasattr(self, "current_skill_content") and self.current_skill_content:
+            skill_context = f"""
+<skill_guidelines>
+{self.current_skill_content}
+</skill_guidelines>
+"""
+
         prompt = f"""Task: {description}
 Details: {metadata}
 {template}
 {auto_fix_instruction}
 {mvp_instruction}
-
+{skill_context}
 {framework_context}
 
 {agile_context}

@@ -211,6 +211,72 @@ class SkillManager:
 
         return None
 
+    # ============================================================
+    # SKILL RESOLUTION PER AGENTE (da variabili d'ambiente)
+    # ============================================================
+
+    def set_agent_skill_mapping(self, mapping: Dict[str, str]):
+        """Imposta la mappa delle skill specifiche per agente da env"""
+        self._agent_skill_mapping = mapping
+
+    def set_common_skills(self, common_skills: List[str]):
+        """Imposta le skills comuni a tutti gli agenti da env"""
+        self._common_skills = common_skills if common_skills else []
+
+    def get_agent_skill(self, agent_type: str) -> Optional[str]:
+        """Ottiene la skill specifica per agente (da env AGENT_SKILL_*)
+        
+        Priorità:
+        1. Skill esplicita nel task (gestita da _task_worker)
+        2. Skill specifica per agente configurata in env
+        3. Nessuna → ritorna None
+        """
+        agent_mapping = getattr(self, '_agent_skill_mapping', {}) or {}
+        return agent_mapping.get(agent_type)
+
+    def get_common_skills_for_agent(self, agent_type: str) -> List[str]:
+        """Ottiene le skills comuni a tutti gli agenti (da env COMMON_SKILLS_ALL_AGENTS)
+        
+        Ritorna la lista di nomi skill che ogni agente dovrebbe usare.
+        """
+        common = getattr(self, '_common_skills', []) or []
+        # Filtra solo quelle che esistono o sono valide
+        return [s for s in common if s]
+
+    def resolve_all_skills_for_agent(
+        self, agent_type: str
+    ) -> List[str]:
+        """Risolve TUTTE le skill per un agente:
+        
+        1. Skill specifica da AGENT_SKILL_<TYPE>
+        2. Skills comuni da COMMON_SKILLS_ALL_AGENTS
+        3. Fallback: trigger detection
+        
+        Ritorna una lista di nomi skill (ordine di priorità).
+        """
+        result = []
+        seen = set()
+
+        # 1. Skill specifica per agente
+        agent_skill = self.get_agent_skill(agent_type)
+        if agent_skill and agent_skill not in seen:
+            result.append(agent_skill)
+            seen.add(agent_skill)
+
+        # 2. Skills comuni a tutti
+        for skill_name in self.get_common_skills_for_agent(agent_type):
+            if skill_name not in seen:
+                result.append(skill_name)
+                seen.add(skill_name)
+
+        # 3. Fallback: se non abbiamo nulla, prova trigger detection
+        if not result:
+            fallback = self.find_skill_by_trigger(f"task for {agent_type}")
+            if fallback:
+                result.append(fallback)
+
+        return result
+
 
 # Integrazione con gli agenti
 class SkillAwareAgent:

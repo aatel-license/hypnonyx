@@ -48,12 +48,13 @@ class QAAgent(BaseAgent):
 
         logger.info(f"Generating E2E tests with LLM (TOON): {description}")
 
-        prompt = f"""Task: {description}
+        raw_prompt = f"""Task: {description}
 {template}
 {auto_fix_instruction}
 
 Generate E2E tests for the application. Use the appropriate testing framework.
 Structure your response as an object with a 'files' key."""
+        prompt = self._inject_skill_context(raw_prompt)
 
         data = await self.llm_client.generate_structured(
             system_prompt=system_prompt, prompt=prompt
@@ -81,7 +82,8 @@ Structure your response as an object with a 'files' key."""
 
         logger.info(f"Validating project with LLM: {description}")
 
-        prompt = f"Validate the project based on this description: {description}\n{auto_fix_instruction}"
+        raw_prompt = f"Validate the project based on this description: {description}\n{auto_fix_instruction}"
+        prompt = self._inject_skill_context(raw_prompt)
 
         response = await self.llm_client.chat_completion(
             [

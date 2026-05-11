@@ -14,7 +14,10 @@ import uuid
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import WORKSPACE_ROOT, MEMORY_DIR, USE_UNIVERSAL_AGENTS, get_topics
+from config import (
+    WORKSPACE_ROOT, MEMORY_DIR, USE_UNIVERSAL_AGENTS, get_topics,
+    AGENT_SKILL_MAPPING, COMMON_SKILLS_ALL_AGENTS
+)
 from agents.orchestrator_agent import OrchestratorAgent
 from agents.backend_agent import BackendAgent
 from agents.frontend_agent import FrontendAgent
@@ -225,7 +228,14 @@ class MultiAgentSystem:
         logger.info("✓ Prompt Manager inizializzato")
 
         self.skill_manager.initialize(WORKSPACE_ROOT)
-        logger.info("✓ Skill Manager inizializzato")
+        
+        # Configura skill resolution da variabili d'ambiente
+        self.skill_manager.set_agent_skill_mapping(AGENT_SKILL_MAPPING)
+        self.skill_manager.set_common_skills(COMMON_SKILLS_ALL_AGENTS)
+        
+        logger.info(f"✓ Skill Manager inizializzato")
+        logger.info(f"  - Agent skill mapping: {AGENT_SKILL_MAPPING}")
+        logger.info(f"  - Common skills per tutti: {COMMON_SKILLS_ALL_AGENTS}")
 
         await self._create_agents()
         logger.info(f"✓ {len(self.agents)} agenti creati")
