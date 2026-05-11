@@ -262,17 +262,20 @@ class ScrumMasterAgent(BaseAgent):
             return
 
         prompt = """Summarize agile retrospective feedbacks and address FAILED tasks.
-Identify concrete technical improvements and decide the fate of each failed task.
+Identify concrete technical improvements and separate them from process/philosophical improvements.
 
-CRITICAL: If the frontend agent reports missing backend routes or APIs, YOU MUST prioritize creating actions/tasks for the backend to implement those missing routes immediately, so the frontend can continue working in parallel.
+- **Technical Actions**: Refactoring, optimization, bug fixes, architecture, security, performance.
+- **Process Actions**: Documentation, agile methodology, communication, standards, workflow.
+
+CRITICAL: If the frontend agent reports missing backend routes or APIs, YOU MUST prioritize creating TECHNICAL actions for the backend to implement those missing routes immediately.
 
 For EACH failed task, decide if it should be:
-1. "retry": Move back to 'pending' (potentially with higher priority if it blocks others).
-2. "rework": Move to 'rework' status (a special status for fixing rejected/failed work).
-3. "split": Create additional smaller action items to address the root cause, then this task will be handled accordingly.
-4. "ignore": Keep as 'failed' if no longer relevant.
+1. "retry": Move back to 'pending'.
+2. "rework": Move to 'rework' status.
+3. "split": Create additional smaller action items.
+4. "ignore": Keep as 'failed'.
 
-Output a summary, a list of selected actions, and a list of decisions for the failed tasks.
+Output a summary, two lists of selected actions (tech_actions and process_actions), and a list of decisions for the failed tasks.
 
 Feedbacks:
 """
@@ -286,7 +289,7 @@ Feedbacks:
 
         # Cerchiamo di ottenere output strutturato per gli Action Items
         try:
-            prompt += "\nStructure your response as an object with: summary (string), actions (list of strings), failed_task_decisions (list of objects with 'task_id', 'decision', and 'reason')."
+            prompt += "\nStructure your response as an object with: summary (string), tech_actions (list of strings), process_actions (list of strings), failed_task_decisions (list of objects with 'task_id', 'decision', and 'reason')."
             data = await self.llm_client.generate_structured(
                 system_prompt="You are an expert Scrum Master.", prompt=prompt
             )
@@ -295,8 +298,10 @@ Feedbacks:
             data = {}
 
         summary = data.get("summary", "No summary available.")
-        actions = data.get("actions", [])
+        tech_actions = data.get("tech_actions", [])
+        process_actions = data.get("process_actions", [])
         failed_task_decisions = data.get("failed_task_decisions", [])
+
 
         # Salva report
         retro_file = self.project_root / "memory" / "retrospective.md"
@@ -353,32 +358,54 @@ Feedbacks:
 
         # Limita il numero di Action Items per evitare il sovraccarico agile
         import os
-        max_improvements = int(os.getenv("MAX_AGILE_IMPROVEMENTS_PER_SPRINT", 3))
+        max_tech = int(os.getenv("MAX_TECH_IMPROVEMENTS", 2))
+        max_process = int(os.getenv("MAX_PROCESS_IMPROVEMENTS", 1))
         
-        if len(actions) > max_improvements:
-            logger.info(f"✂️ Riducendo action items da {len(actions)} a {max_improvements} (limite MAX_AGILE_IMPROVEMENTS_PER_SPRINT)")
-            actions = actions[:max_improvements]
+        if len(tech_actions) > max_tech:
+            logger.info(f"✂️ Riducendo tech actions da {len(tech_actions)} a {max_tech}")
+            tech_actions = tech_actions[:max_tech]
+        
+        if len(process_actions) > max_process:
+            logger.info(f"✂️ Riducendo process actions da {len(process_actions)} a {max_process}")
+            process_actions = process_actions[:max_process]
 
-        # Crea task per Action Items
-        for action in actions:
+        # Crea task per Technical Action Items
+        for action in tech_actions:
             agent_type = self._detect_agent_type(action)
             new_task = {
-                "task_id": f"retro_{sprint_id}_{int(time.time())}_{abs(hash(action)) % 10000}",
+                "task_id": f"retro_tech_{sprint_id}_{int(time.time())}_{abs(hash(action)) % 10000}",
                 "project_id": self.project_id,
                 "type": "scrum_improvement",
                 "agent_type": agent_type,
-                "description": f"[Agile Improvement] {action}",
-                "priority": 5, # Abbassata priorità (default era 10) per non bloccare sviluppo
+                "description": f"[Tech Improvement] {action}",
+                "priority": 5,
                 "status": "pending",
                 "metadata": json.dumps(
-                    {"source": "retrospective", "sprint_id": sprint_id}
+                    {"source": "retrospective", "sprint_id": sprint_id, "category": "technical"}
                 ),
             }
             await self.memory.save_task(new_task)
-            # Pubblica il nuovo task così l'orchestratore lo vede subito
-            await self.broker.publish(
-                get_topics(self.project_id)["TASKS_NEW"], new_task
-            )
+            await self.broker.publish(get_topics(self.project_id)["TASKS_NEW"], new_task)
+
+        # Crea task per Process Action Items
+        for action in process_actions:
+            # I task di processo vanno preferibilmente allo Scrum Master o Architect
+            agent_type = "scrum_master" if "agile" in action.lower() or "process" in action.lower() else self._detect_agent_type(action)
+            new_task = {
+                "task_id": f"retro_proc_{sprint_id}_{int(time.time())}_{abs(hash(action)) % 10000}",
+                "project_id": self.project_id,
+                "type": "scrum_improvement",
+                "agent_type": agent_type,
+                "description": f"[Process Improvement] {action}",
+                "priority": 3, # Priorità ancora più bassa per il processo
+                "status": "pending",
+                "metadata": json.dumps(
+                    {"source": "retrospective", "sprint_id": sprint_id, "category": "process"}
+                ),
+            }
+            await self.memory.save_task(new_task)
+            await self.broker.publish(get_topics(self.project_id)["TASKS_NEW"], new_task)
+
 
 
         await self.memory.complete_sprint(sprint_id)
