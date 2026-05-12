@@ -577,12 +577,15 @@ class MemorySystem:
         def _sync():
             conn = sqlite3.connect(self.db_path)
             cursor = conn.cursor()
-            # Ordina i progetti per l'attività più recente (data di creazione dell'ultimo task)
+            # Ordina i progetti per l'attività più recente (data di creazione dell'ultimo task, record memoria o sprint)
+            # Nota: 'tasks' usa 'created_at', 'project_memory' usa 'timestamp', 'sprints' usa 'started_at'
             cursor.execute("""
                 SELECT project_id FROM (
                     SELECT project_id, MAX(created_at) as last_act FROM tasks GROUP BY project_id
                     UNION
-                    SELECT project_id, MAX(created_at) as last_act FROM project_memory GROUP BY project_id
+                    SELECT project_id, MAX(timestamp) as last_act FROM project_memory GROUP BY project_id
+                    UNION
+                    SELECT project_id, MAX(started_at) as last_act FROM sprints GROUP BY project_id
                 ) GROUP BY project_id ORDER BY MAX(last_act) DESC
             """)
             projects = [row[0] for row in cursor.fetchall() if row[0]]
